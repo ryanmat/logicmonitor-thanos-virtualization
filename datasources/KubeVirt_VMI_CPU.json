@@ -1,0 +1,100 @@
+{
+  "name": "KubeVirt_VMI_CPU",
+  "displayName": "KubeVirt VMI CPU",
+  "description": "CPU performance metrics for KubeVirt Virtual Machine Instances",
+  "group": "KubeVirt",
+  "tags": "kubevirt,openshift,virtualization,cpu",
+  "appliesTo": "kubevirt.thanos.host && kubevirt.thanos.token",
+  "technology": "Collects CPU metrics from Thanos/Prometheus for KubeVirt VMIs",
+  "collectMethod": "batchscript",
+  "collectInterval": 60,
+  "multiInstance": true,
+  "hasMultiInstances": true,
+  "useWildValueAsUniqueIdentifier": true,
+  "activeDiscovery": {
+    "method": "ad_script",
+    "schedule": 900,
+    "deleteInactiveInstances": true,
+    "disableInstance": false,
+    "script": {
+      "type": "embeddedGroovyScript",
+      "content": "// v4 - VMI Discovery for CPU DataSource\nimport groovy.json.JsonSlurper\n\nclass ThanosClient {\n    private String host, token, baseUrl\n    private int port\n    private boolean ssl\n\n    ThanosClient(Map p) {\n        this.host = p.get(\"kubevirt.thanos.host\")\n        this.token = p.get(\"kubevirt.thanos.token\")\n        this.port = (p.get(\"kubevirt.thanos.port\") ?: \"443\") as int\n        this.ssl = (p.get(\"kubevirt.thanos.ssl\") ?: \"true\").toLowerCase() == \"true\"\n        if (!host || !token) throw new IllegalArgumentException(\"Missing config\")\n        def proto = ssl ? \"https\" : \"http\"\n        def ps = ((ssl && port == 443) || (!ssl && port == 80)) ? \"\" : \":${port}\"\n        this.baseUrl = \"${proto}://${host}${ps}\"\n    }\n\n    List queryWithLabels(String promql) {\n        def url = \"${baseUrl}/api/v1/query?query=${java.net.URLEncoder.encode(promql, 'UTF-8')}\"\n        try {\n            def resp = executeHttpGet(url)\n            def json = new JsonSlurper().parseText(resp)\n            if (json.status != \"success\" || !json.data?.result) return []\n            return json.data.result.collect { r -> [r.metric ?: [:], r.value ? r.value[1] : null] }\n        } catch (Exception e) { return [] }\n    }\n\n    private String executeHttpGet(String url) {\n        try {\n            def http = Class.forName(\"com.santaba.agent.groovyapi.http.HTTP\").newInstance()\n            http.open(url); http.setHeader(\"Authorization\", \"Bearer ${token}\")\n            def r = http.get(); http.close(); return r\n        } catch (ClassNotFoundException e) {\n            def c = new URL(url).openConnection() as HttpURLConnection\n            c.setRequestMethod(\"GET\"); c.setRequestProperty(\"Authorization\", \"Bearer ${token}\")\n            c.setConnectTimeout(30000); c.setReadTimeout(60000)\n            if (ssl) { try {\n                def sc = javax.net.ssl.SSLContext.getInstance(\"TLS\")\n                sc.init(null, [new javax.net.ssl.X509TrustManager() {\n                    void checkClientTrusted(java.security.cert.X509Certificate[] x, String a) {}\n                    void checkServerTrusted(java.security.cert.X509Certificate[] x, String a) {}\n                    java.security.cert.X509Certificate[] getAcceptedIssuers() { null }\n                }] as javax.net.ssl.TrustManager[], new java.security.SecureRandom())\n                c.setSSLSocketFactory(sc.getSocketFactory()); c.setHostnameVerifier({ h, s -> true })\n            } catch (Exception ex) {} }\n            if (c.getResponseCode() != 200) throw new RuntimeException(\"HTTP ${c.getResponseCode()}\")\n            return c.getInputStream().text\n        }\n    }\n}\n\ntry {\n    def client = new ThanosClient(hostProps)\n    client.queryWithLabels('kubevirt_vmi_info{phase=\"running\"}').each { labels, value ->\n        def ns = labels.get(\"namespace\")\n        def name = labels.get(\"name\")\n        if (!ns || !name) return\n        def node = labels.get(\"node\") ?: \"unknown\"\n        def guestOs = labels.get(\"guest_os_name\") ?: \"\"\n        def desc = \"VM ${name} in ${ns}\" + (guestOs ? \" (${guestOs})\" : \"\")\n        def props = [\"auto.kubevirt.namespace=${ns}\", \"auto.kubevirt.vmi_name=${name}\", \"auto.kubevirt.node=${node}\"]\n        println \"${ns}/${name}##${name}##${desc}####${props.join('&')}\"\n    }\n    return 0\n} catch (Exception e) {\n    System.err.println \"ERROR: ${e.message}\"\n    return 1\n}"
+    }
+  },
+  "dataPoints": [
+    {
+      "name": "cpu_usage_percent",
+      "description": "Overall CPU usage percentage",
+      "type": "gauge",
+      "alertExpr": "> 90",
+      "alertExprNote": "Alert when CPU usage exceeds 90%"
+    },
+    {
+      "name": "cpu_usage_rate",
+      "description": "CPU usage rate (seconds/second)",
+      "type": "gauge"
+    },
+    {
+      "name": "cpu_system_rate",
+      "description": "System CPU usage rate (seconds/second)",
+      "type": "gauge"
+    },
+    {
+      "name": "cpu_user_rate",
+      "description": "User CPU usage rate (seconds/second)",
+      "type": "gauge"
+    },
+    {
+      "name": "vcpu_seconds_rate",
+      "description": "vCPU time rate aggregated across all vCPUs (seconds/second)",
+      "type": "gauge"
+    },
+    {
+      "name": "vcpu_seconds_rate_percent",
+      "description": "vCPU usage as percentage",
+      "type": "gauge"
+    },
+    {
+      "name": "vcpu_wait_rate",
+      "description": "vCPU wait time rate - similar to vSphere CPU ready (seconds/second)",
+      "type": "gauge",
+      "alertExpr": "> 0.1",
+      "alertExprNote": "Alert when vCPU wait exceeds 10%"
+    },
+    {
+      "name": "vcpu_delay_rate",
+      "description": "vCPU delay time rate (seconds/second)",
+      "type": "gauge"
+    }
+  ],
+  "collectScript": {
+    "type": "embeddedGroovyScript",
+    "content": "// v4 - CPU Collection BATCHSCRIPT\nimport groovy.json.JsonSlurper\n\nclass ThanosClient {\n    private String host, token, baseUrl\n    private int port\n    private boolean ssl\n\n    ThanosClient(Map p) {\n        this.host = p.get(\"kubevirt.thanos.host\")\n        this.token = p.get(\"kubevirt.thanos.token\")\n        this.port = (p.get(\"kubevirt.thanos.port\") ?: \"443\") as int\n        this.ssl = (p.get(\"kubevirt.thanos.ssl\") ?: \"true\").toLowerCase() == \"true\"\n        if (!host || !token) throw new IllegalArgumentException(\"Missing config\")\n        def proto = ssl ? \"https\" : \"http\"\n        def ps = ((ssl && port == 443) || (!ssl && port == 80)) ? \"\" : \":${port}\"\n        this.baseUrl = \"${proto}://${host}${ps}\"\n    }\n\n    Map queryGroupedByKey(String promql, List<String> keys, String sep = \"/\") {\n        def results = [:]\n        def url = \"${baseUrl}/api/v1/query?query=${java.net.URLEncoder.encode(promql, 'UTF-8')}\"\n        try {\n            def resp = executeHttpGet(url)\n            def json = new JsonSlurper().parseText(resp)\n            if (json.status != \"success\" || !json.data?.result) return results\n            json.data.result.each { r ->\n                def labels = r.metric ?: [:]\n                def keyParts = keys.collect { labels[it] ?: \"\" }\n                if (keyParts.every { it }) results[keyParts.join(sep)] = r.value ? r.value[1] : null\n            }\n        } catch (Exception e) {}\n        return results\n    }\n\n    private String executeHttpGet(String url) {\n        try {\n            def http = Class.forName(\"com.santaba.agent.groovyapi.http.HTTP\").newInstance()\n            http.open(url); http.setHeader(\"Authorization\", \"Bearer ${token}\")\n            def r = http.get(); http.close(); return r\n        } catch (ClassNotFoundException e) {\n            def c = new URL(url).openConnection() as HttpURLConnection\n            c.setRequestMethod(\"GET\"); c.setRequestProperty(\"Authorization\", \"Bearer ${token}\")\n            c.setConnectTimeout(30000); c.setReadTimeout(60000)\n            if (ssl) { try {\n                def sc = javax.net.ssl.SSLContext.getInstance(\"TLS\")\n                sc.init(null, [new javax.net.ssl.X509TrustManager() {\n                    void checkClientTrusted(java.security.cert.X509Certificate[] x, String a) {}\n                    void checkServerTrusted(java.security.cert.X509Certificate[] x, String a) {}\n                    java.security.cert.X509Certificate[] getAcceptedIssuers() { null }\n                }] as javax.net.ssl.TrustManager[], new java.security.SecureRandom())\n                c.setSSLSocketFactory(sc.getSocketFactory()); c.setHostnameVerifier({ h, s -> true })\n            } catch (Exception ex) {} }\n            if (c.getResponseCode() != 200) throw new RuntimeException(\"HTTP ${c.getResponseCode()}\")\n            return c.getInputStream().text\n        }\n    }\n}\n\ntry {\n    def client = new ThanosClient(hostProps)\n    def metrics = [\n        \"cpu_usage_rate\": 'rate(kubevirt_vmi_cpu_usage_seconds_total[5m])',\n        \"cpu_system_rate\": 'rate(kubevirt_vmi_cpu_system_usage_seconds_total[5m])',\n        \"cpu_user_rate\": 'rate(kubevirt_vmi_cpu_user_usage_seconds_total[5m])',\n        \"vcpu_wait_rate\": 'rate(kubevirt_vmi_vcpu_wait_seconds_total[5m])',\n        \"vcpu_delay_rate\": 'rate(kubevirt_vmi_vcpu_delay_seconds_total[5m])'\n    ]\n    def allData = [:]\n\n    // vcpu_seconds aggregated by VM\n    client.queryGroupedByKey('sum by (namespace, name) (rate(kubevirt_vmi_vcpu_seconds_total[5m]))', [\"namespace\", \"name\"]).each { k, v ->\n        if (!allData[k]) allData[k] = [:]\n        allData[k][\"vcpu_seconds_rate\"] = v\n    }\n\n    metrics.each { dp, query ->\n        client.queryGroupedByKey(query, [\"namespace\", \"name\"]).each { k, v ->\n            if (!allData[k]) allData[k] = [:]\n            allData[k][dp] = v\n        }\n    }\n\n    allData.each { wv, dps ->\n        dps.each { dp, val ->\n            if (val != null) {\n                if (dp == \"cpu_usage_rate\" || dp == \"vcpu_seconds_rate\") {\n                    def pct = String.format(\"%.4f\", (val as Double) * 100)\n                    println \"${wv}.${dp.replace('_rate', '_percent')}=${pct}\"\n                }\n                println \"${wv}.${dp}=${val}\"\n            }\n        }\n    }\n    return 0\n} catch (Exception e) {\n    System.err.println \"ERROR: ${e.message}\"\n    return 1\n}"
+  },
+  "graphs": [
+    {
+      "name": "CPU Usage",
+      "title": "CPU Usage Percentage",
+      "dataPoints": [
+        {"name": "cpu_usage_percent", "aggregation": "avg"},
+        {"name": "vcpu_seconds_rate_percent", "aggregation": "avg"}
+      ]
+    },
+    {
+      "name": "CPU Breakdown",
+      "title": "CPU Usage Breakdown (seconds/sec)",
+      "dataPoints": [
+        {"name": "cpu_system_rate", "aggregation": "avg"},
+        {"name": "cpu_user_rate", "aggregation": "avg"}
+      ]
+    },
+    {
+      "name": "vCPU Wait",
+      "title": "vCPU Wait and Delay Time",
+      "dataPoints": [
+        {"name": "vcpu_wait_rate", "aggregation": "avg"},
+        {"name": "vcpu_delay_rate", "aggregation": "avg"}
+      ]
+    }
+  ]
+}
