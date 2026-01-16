@@ -1,0 +1,136 @@
+{
+  "name": "KubeVirt_VMI_Memory",
+  "displayName": "KubeVirt VMI Memory",
+  "description": "Memory metrics for KubeVirt Virtual Machine Instances",
+  "group": "KubeVirt",
+  "tags": "kubevirt,openshift,virtualization,memory",
+  "appliesTo": "kubevirt.thanos.host && kubevirt.thanos.token",
+  "technology": "Collects memory metrics from Thanos/Prometheus for KubeVirt VMIs",
+  "collectMethod": "batchscript",
+  "collectInterval": 60,
+  "multiInstance": true,
+  "hasMultiInstances": true,
+  "useWildValueAsUniqueIdentifier": true,
+  "activeDiscovery": {
+    "method": "ad_script",
+    "schedule": 900,
+    "deleteInactiveInstances": true,
+    "disableInstance": false,
+    "script": {
+      "type": "embeddedGroovyScript",
+      "content": "// v4 - VMI Discovery for Memory DataSource\nimport groovy.json.JsonSlurper\n\nclass ThanosClient {\n    private String host, token, baseUrl\n    private int port\n    private boolean ssl\n\n    ThanosClient(Map p) {\n        this.host = p.get(\"kubevirt.thanos.host\")\n        this.token = p.get(\"kubevirt.thanos.token\")\n        this.port = (p.get(\"kubevirt.thanos.port\") ?: \"443\") as int\n        this.ssl = (p.get(\"kubevirt.thanos.ssl\") ?: \"true\").toLowerCase() == \"true\"\n        if (!host || !token) throw new IllegalArgumentException(\"Missing config\")\n        def proto = ssl ? \"https\" : \"http\"\n        def ps = ((ssl && port == 443) || (!ssl && port == 80)) ? \"\" : \":${port}\"\n        this.baseUrl = \"${proto}://${host}${ps}\"\n    }\n\n    List queryWithLabels(String promql) {\n        def url = \"${baseUrl}/api/v1/query?query=${java.net.URLEncoder.encode(promql, 'UTF-8')}\"\n        try {\n            def resp = executeHttpGet(url)\n            def json = new JsonSlurper().parseText(resp)\n            if (json.status != \"success\" || !json.data?.result) return []\n            return json.data.result.collect { r -> [r.metric ?: [:], r.value ? r.value[1] : null] }\n        } catch (Exception e) { return [] }\n    }\n\n    private String executeHttpGet(String url) {\n        try {\n            def http = Class.forName(\"com.santaba.agent.groovyapi.http.HTTP\").newInstance()\n            http.open(url); http.setHeader(\"Authorization\", \"Bearer ${token}\")\n            def r = http.get(); http.close(); return r\n        } catch (ClassNotFoundException e) {\n            def c = new URL(url).openConnection() as HttpURLConnection\n            c.setRequestMethod(\"GET\"); c.setRequestProperty(\"Authorization\", \"Bearer ${token}\")\n            c.setConnectTimeout(30000); c.setReadTimeout(60000)\n            if (ssl) { try {\n                def sc = javax.net.ssl.SSLContext.getInstance(\"TLS\")\n                sc.init(null, [new javax.net.ssl.X509TrustManager() {\n                    void checkClientTrusted(java.security.cert.X509Certificate[] x, String a) {}\n                    void checkServerTrusted(java.security.cert.X509Certificate[] x, String a) {}\n                    java.security.cert.X509Certificate[] getAcceptedIssuers() { null }\n                }] as javax.net.ssl.TrustManager[], new java.security.SecureRandom())\n                c.setSSLSocketFactory(sc.getSocketFactory()); c.setHostnameVerifier({ h, s -> true })\n            } catch (Exception ex) {} }\n            if (c.getResponseCode() != 200) throw new RuntimeException(\"HTTP ${c.getResponseCode()}\")\n            return c.getInputStream().text\n        }\n    }\n}\n\ntry {\n    def client = new ThanosClient(hostProps)\n    client.queryWithLabels('kubevirt_vmi_info{phase=\"running\"}').each { labels, value ->\n        def ns = labels.get(\"namespace\")\n        def name = labels.get(\"name\")\n        if (!ns || !name) return\n        def node = labels.get(\"node\") ?: \"unknown\"\n        def guestOs = labels.get(\"guest_os_name\") ?: \"\"\n        def desc = \"VM ${name} in ${ns}\" + (guestOs ? \" (${guestOs})\" : \"\")\n        def props = [\"auto.kubevirt.namespace=${ns}\", \"auto.kubevirt.vmi_name=${name}\", \"auto.kubevirt.node=${node}\"]\n        println \"${ns}/${name}##${name}##${desc}####${props.join('&')}\"\n    }\n    return 0\n} catch (Exception e) {\n    System.err.println \"ERROR: ${e.message}\"\n    return 1\n}"
+    }
+  },
+  "dataPoints": [
+    {
+      "name": "memory_usage_percent",
+      "description": "Memory usage percentage",
+      "type": "gauge",
+      "alertExpr": "> 90",
+      "alertExprNote": "Alert when memory usage exceeds 90%"
+    },
+    {
+      "name": "memory_available_bytes",
+      "description": "Available memory in bytes",
+      "type": "gauge"
+    },
+    {
+      "name": "memory_used_bytes",
+      "description": "Used memory in bytes",
+      "type": "gauge"
+    },
+    {
+      "name": "memory_domain_bytes",
+      "description": "Total domain memory in bytes",
+      "type": "gauge"
+    },
+    {
+      "name": "memory_resident_bytes",
+      "description": "Resident/active memory in bytes (like vSphere mem.active)",
+      "type": "gauge"
+    },
+    {
+      "name": "memory_cached_bytes",
+      "description": "Cached memory in bytes",
+      "type": "gauge"
+    },
+    {
+      "name": "memory_usable_bytes",
+      "description": "Usable memory in bytes",
+      "type": "gauge"
+    },
+    {
+      "name": "memory_unused_bytes",
+      "description": "Unused memory in bytes",
+      "type": "gauge"
+    },
+    {
+      "name": "memory_balloon_bytes",
+      "description": "Memory reclaimed by balloon driver",
+      "type": "gauge"
+    },
+    {
+      "name": "memory_swap_in_rate",
+      "description": "Swap in rate (bytes/sec)",
+      "type": "gauge",
+      "alertExpr": "> 1048576",
+      "alertExprNote": "Alert when swap in exceeds 1MB/sec"
+    },
+    {
+      "name": "memory_swap_out_rate",
+      "description": "Swap out rate (bytes/sec)",
+      "type": "gauge",
+      "alertExpr": "> 1048576",
+      "alertExprNote": "Alert when swap out exceeds 1MB/sec"
+    },
+    {
+      "name": "memory_pgmajfault_rate",
+      "description": "Major page faults per second",
+      "type": "gauge"
+    },
+    {
+      "name": "memory_pgminfault_rate",
+      "description": "Minor page faults per second",
+      "type": "gauge"
+    }
+  ],
+  "collectScript": {
+    "type": "embeddedGroovyScript",
+    "content": "// v4 - Memory Collection BATCHSCRIPT\nimport groovy.json.JsonSlurper\n\nclass ThanosClient {\n    private String host, token, baseUrl\n    private int port\n    private boolean ssl\n\n    ThanosClient(Map p) {\n        this.host = p.get(\"kubevirt.thanos.host\")\n        this.token = p.get(\"kubevirt.thanos.token\")\n        this.port = (p.get(\"kubevirt.thanos.port\") ?: \"443\") as int\n        this.ssl = (p.get(\"kubevirt.thanos.ssl\") ?: \"true\").toLowerCase() == \"true\"\n        if (!host || !token) throw new IllegalArgumentException(\"Missing config\")\n        def proto = ssl ? \"https\" : \"http\"\n        def ps = ((ssl && port == 443) || (!ssl && port == 80)) ? \"\" : \":${port}\"\n        this.baseUrl = \"${proto}://${host}${ps}\"\n    }\n\n    Map queryGroupedByKey(String promql, List<String> keys, String sep = \"/\") {\n        def results = [:]\n        def url = \"${baseUrl}/api/v1/query?query=${java.net.URLEncoder.encode(promql, 'UTF-8')}\"\n        try {\n            def resp = executeHttpGet(url)\n            def json = new JsonSlurper().parseText(resp)\n            if (json.status != \"success\" || !json.data?.result) return results\n            json.data.result.each { r ->\n                def labels = r.metric ?: [:]\n                def keyParts = keys.collect { labels[it] ?: \"\" }\n                if (keyParts.every { it }) results[keyParts.join(sep)] = r.value ? r.value[1] : null\n            }\n        } catch (Exception e) {}\n        return results\n    }\n\n    private String executeHttpGet(String url) {\n        try {\n            def http = Class.forName(\"com.santaba.agent.groovyapi.http.HTTP\").newInstance()\n            http.open(url); http.setHeader(\"Authorization\", \"Bearer ${token}\")\n            def r = http.get(); http.close(); return r\n        } catch (ClassNotFoundException e) {\n            def c = new URL(url).openConnection() as HttpURLConnection\n            c.setRequestMethod(\"GET\"); c.setRequestProperty(\"Authorization\", \"Bearer ${token}\")\n            c.setConnectTimeout(30000); c.setReadTimeout(60000)\n            if (ssl) { try {\n                def sc = javax.net.ssl.SSLContext.getInstance(\"TLS\")\n                sc.init(null, [new javax.net.ssl.X509TrustManager() {\n                    void checkClientTrusted(java.security.cert.X509Certificate[] x, String a) {}\n                    void checkServerTrusted(java.security.cert.X509Certificate[] x, String a) {}\n                    java.security.cert.X509Certificate[] getAcceptedIssuers() { null }\n                }] as javax.net.ssl.TrustManager[], new java.security.SecureRandom())\n                c.setSSLSocketFactory(sc.getSocketFactory()); c.setHostnameVerifier({ h, s -> true })\n            } catch (Exception ex) {} }\n            if (c.getResponseCode() != 200) throw new RuntimeException(\"HTTP ${c.getResponseCode()}\")\n            return c.getInputStream().text\n        }\n    }\n}\n\ntry {\n    def client = new ThanosClient(hostProps)\n    def instant = [\n        \"memory_available_bytes\": 'kubevirt_vmi_memory_available_bytes',\n        \"memory_used_bytes\": 'kubevirt_vmi_memory_used_bytes',\n        \"memory_domain_bytes\": 'kubevirt_vmi_memory_domain_bytes',\n        \"memory_resident_bytes\": 'kubevirt_vmi_memory_resident_bytes',\n        \"memory_cached_bytes\": 'kubevirt_vmi_memory_cached_bytes',\n        \"memory_usable_bytes\": 'kubevirt_vmi_memory_usable_bytes',\n        \"memory_unused_bytes\": 'kubevirt_vmi_memory_unused_bytes',\n        \"memory_balloon_bytes\": 'kubevirt_vmi_memory_actual_balloon_bytes'\n    ]\n    def rates = [\n        \"memory_swap_in_rate\": 'rate(kubevirt_vmi_memory_swap_in_traffic_bytes[5m])',\n        \"memory_swap_out_rate\": 'rate(kubevirt_vmi_memory_swap_out_traffic_bytes[5m])',\n        \"memory_pgmajfault_rate\": 'rate(kubevirt_vmi_memory_pgmajfault_total[5m])',\n        \"memory_pgminfault_rate\": 'rate(kubevirt_vmi_memory_pgminfault_total[5m])'\n    ]\n    def allData = [:]\n\n    instant.each { dp, q -> client.queryGroupedByKey(q, [\"namespace\", \"name\"]).each { k, v -> if (!allData[k]) allData[k] = [:]; allData[k][dp] = v } }\n    rates.each { dp, q -> client.queryGroupedByKey(q, [\"namespace\", \"name\"]).each { k, v -> if (!allData[k]) allData[k] = [:]; allData[k][dp] = v } }\n\n    allData.each { wv, dps ->\n        dps.each { dp, val -> if (val != null) println \"${wv}.${dp}=${val}\" }\n        def domain = dps[\"memory_domain_bytes\"]\n        def avail = dps[\"memory_available_bytes\"]\n        if (domain && avail) {\n            try {\n                def d = domain as Double\n                def a = avail as Double\n                if (d > 0) println \"${wv}.memory_usage_percent=${String.format('%.2f', ((d - a) / d) * 100)}\"\n            } catch (Exception e) {}\n        }\n    }\n    return 0\n} catch (Exception e) {\n    System.err.println \"ERROR: ${e.message}\"\n    return 1\n}"
+  },
+  "graphs": [
+    {
+      "name": "Memory Usage",
+      "title": "Memory Usage Percentage",
+      "dataPoints": [
+        {"name": "memory_usage_percent", "aggregation": "avg"}
+      ]
+    },
+    {
+      "name": "Memory Allocation",
+      "title": "Memory Allocation (bytes)",
+      "dataPoints": [
+        {"name": "memory_used_bytes", "aggregation": "avg"},
+        {"name": "memory_available_bytes", "aggregation": "avg"},
+        {"name": "memory_domain_bytes", "aggregation": "avg"}
+      ]
+    },
+    {
+      "name": "Memory Details",
+      "title": "Memory Details (bytes)",
+      "dataPoints": [
+        {"name": "memory_resident_bytes", "aggregation": "avg"},
+        {"name": "memory_cached_bytes", "aggregation": "avg"},
+        {"name": "memory_balloon_bytes", "aggregation": "avg"}
+      ]
+    },
+    {
+      "name": "Swap Activity",
+      "title": "Swap Activity (bytes/sec)",
+      "dataPoints": [
+        {"name": "memory_swap_in_rate", "aggregation": "avg"},
+        {"name": "memory_swap_out_rate", "aggregation": "avg"}
+      ]
+    }
+  ]
+}
