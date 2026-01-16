@@ -1,0 +1,68 @@
+# Description: Git ignore file for KubeVirt Thanos DataSources project.
+# Description: Excludes internal docs, credentials, IDE files, and LLM-generated content.
+
+# Internal planning documents (per CLAUDE.md - docs/ is for internal planning only)
+docs/
+
+# Environment and credentials (per CLAUDE.md - never commit tokens/keys)
+.env
+.env.*
+*.env
+credentials.json
+**/secrets/
+*.token
+
+# Claude Code configuration (per CLAUDE.md - keep colleague environments separate)
+.claude/
+CLAUDE.md
+
+# LLM-generated specs and plans (per CLAUDE.md)
+*_spec.md
+*_plan.md
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.settings/
+.classpath
+
+# Python (if using for testing)
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.venv/
+venv/
+ENV/
+
+# Groovy/Java
+*.class
+*.jar
+*.war
+*.ear
+target/
+out/
+
+# Test artifacts
+*.log
+test-output/
+coverage/
+
+# Release artifacts (generated, not committed)
+release/
+*.zip
+CHECKSUMS.txt
