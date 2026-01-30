@@ -1,106 +1,190 @@
 {
-  "name": "KubeVirt_VMI_Network",
-  "displayName": "KubeVirt VMI Network",
-  "description": "Network metrics per interface for KubeVirt Virtual Machine Instances",
-  "group": "KubeVirt",
-  "tags": "kubevirt,openshift,virtualization,network",
-  "appliesTo": "kubevirt.thanos.host && kubevirt.thanos.token",
-  "technology": "Collects per-interface network metrics from Thanos/Prometheus for KubeVirt VMIs",
-  "collectMethod": "batchscript",
-  "collectInterval": 60,
-  "multiInstance": true,
-  "hasMultiInstances": true,
-  "useWildValueAsUniqueIdentifier": true,
-  "activeDiscovery": {
-    "method": "ad_script",
-    "schedule": 900,
-    "deleteInactiveInstances": true,
-    "disableInstance": false,
-    "script": {
-      "type": "embeddedGroovyScript",
-      "content": "// v4 - Network Interface Discovery\nimport groovy.json.JsonSlurper\n\nclass ThanosClient {\n    private String host, token, baseUrl\n    private int port\n    private boolean ssl\n\n    ThanosClient(Map p) {\n        this.host = p.get(\"kubevirt.thanos.host\")\n        this.token = p.get(\"kubevirt.thanos.token\")\n        this.port = (p.get(\"kubevirt.thanos.port\") ?: \"443\") as int\n        this.ssl = (p.get(\"kubevirt.thanos.ssl\") ?: \"true\").toLowerCase() == \"true\"\n        if (!host || !token) throw new IllegalArgumentException(\"Missing config\")\n        def proto = ssl ? \"https\" : \"http\"\n        def ps = ((ssl && port == 443) || (!ssl && port == 80)) ? \"\" : \":${port}\"\n        this.baseUrl = \"${proto}://${host}${ps}\"\n    }\n\n    List queryWithLabels(String promql) {\n        def url = \"${baseUrl}/api/v1/query?query=${java.net.URLEncoder.encode(promql, 'UTF-8')}\"\n        try {\n            def resp = executeHttpGet(url)\n            def json = new JsonSlurper().parseText(resp)\n            if (json.status != \"success\" || !json.data?.result) return []\n            return json.data.result.collect { r -> [r.metric ?: [:], r.value ? r.value[1] : null] }\n        } catch (Exception e) { return [] }\n    }\n\n    private String executeHttpGet(String url) {\n        try {\n            def http = Class.forName(\"com.santaba.agent.groovyapi.http.HTTP\").newInstance()\n            http.open(url); http.setHeader(\"Authorization\", \"Bearer ${token}\")\n            def r = http.get(); http.close(); return r\n        } catch (ClassNotFoundException e) {\n            def c = new URL(url).openConnection() as HttpURLConnection\n            c.setRequestMethod(\"GET\"); c.setRequestProperty(\"Authorization\", \"Bearer ${token}\")\n            c.setConnectTimeout(30000); c.setReadTimeout(60000)\n            if (ssl) { try {\n                def sc = javax.net.ssl.SSLContext.getInstance(\"TLS\")\n                sc.init(null, [new javax.net.ssl.X509TrustManager() {\n                    void checkClientTrusted(java.security.cert.X509Certificate[] x, String a) {}\n                    void checkServerTrusted(java.security.cert.X509Certificate[] x, String a) {}\n                    java.security.cert.X509Certificate[] getAcceptedIssuers() { null }\n                }] as javax.net.ssl.TrustManager[], new java.security.SecureRandom())\n                c.setSSLSocketFactory(sc.getSocketFactory()); c.setHostnameVerifier({ h, s -> true })\n            } catch (Exception ex) {} }\n            if (c.getResponseCode() != 200) throw new RuntimeException(\"HTTP ${c.getResponseCode()}\")\n            return c.getInputStream().text\n        }\n    }\n}\n\ntry {\n    def client = new ThanosClient(hostProps)\n    def discovered = [] as Set\n    client.queryWithLabels('kubevirt_vmi_network_receive_bytes_total').each { labels, value ->\n        def ns = labels.get(\"namespace\")\n        def name = labels.get(\"name\")\n        def iface = labels.get(\"interface\")\n        if (!ns || !name || !iface) return\n        def key = \"${ns}/${name}/${iface}\"\n        if (discovered.contains(key)) return\n        discovered.add(key)\n        def props = [\"auto.kubevirt.namespace=${ns}\", \"auto.kubevirt.vmi_name=${name}\", \"auto.kubevirt.interface=${iface}\"]\n        println \"${key}##${name}/${iface}##Interface ${iface} on VM ${name}####${props.join('&')}\"\n    }\n    return 0\n} catch (Exception e) {\n    System.err.println \"ERROR: ${e.message}\"\n    return 1\n}"
-    }
-  },
-  "dataPoints": [
+  "collectionMethod": "script",
+  "datapoints": [
     {
+      "max": "",
+      "triggerInterval": 5,
+      "dataType": 7,
+      "maxDigits": 4,
+      "description": "Receive bytes per second",
+      "interpretMethod": "namevalue",
+      "interpretExpr": "rx_bytes",
+      "type": "gauge",
+      "clearInterval": 0,
+      "originId": "XKvSkzpNQq-gRICVgtLsAw",
+      "useValue": "output",
+      "min": "0",
       "name": "rx_bytes",
-      "description": "Receive throughput (bytes/sec)",
-      "type": "gauge"
+      "noData": "Do not trigger an alert",
+      "statusDisplayNames": []
     },
     {
-      "name": "tx_bytes",
-      "description": "Transmit throughput (bytes/sec)",
-      "type": "gauge"
-    },
-    {
-      "name": "rx_packets",
-      "description": "Receive packet rate (packets/sec)",
-      "type": "gauge"
-    },
-    {
-      "name": "tx_packets",
-      "description": "Transmit packet rate (packets/sec)",
-      "type": "gauge"
-    },
-    {
-      "name": "rx_errors",
-      "description": "Receive errors per second",
+      "max": "",
+      "triggerInterval": 5,
+      "dataType": 7,
+      "maxDigits": 4,
+      "description": "Receive packets dropped per second",
+      "interpretMethod": "namevalue",
+      "threshold": "> 0",
+      "interpretExpr": "rx_dropped",
       "type": "gauge",
-      "alertExpr": "> 0",
-      "alertExprNote": "Alert on any receive errors"
-    },
-    {
-      "name": "tx_errors",
-      "description": "Transmit errors per second",
-      "type": "gauge",
-      "alertExpr": "> 0",
-      "alertExprNote": "Alert on any transmit errors"
-    },
-    {
+      "clearInterval": 0,
+      "originId": "aO1KB68qTSm6Em8_C7wGRQ",
+      "useValue": "output",
+      "min": "0",
       "name": "rx_dropped",
-      "description": "Receive dropped packets per second",
-      "type": "gauge",
-      "alertExpr": "> 10",
-      "alertExprNote": "Alert when drops exceed 10/sec"
+      "noData": "Do not trigger an alert",
+      "statusDisplayNames": []
     },
     {
-      "name": "tx_dropped",
-      "description": "Transmit dropped packets per second",
+      "max": "",
+      "triggerInterval": 5,
+      "dataType": 7,
+      "maxDigits": 4,
+      "description": "Receive errors per second",
+      "interpretMethod": "namevalue",
+      "threshold": "> 0",
+      "interpretExpr": "rx_errors",
       "type": "gauge",
-      "alertExpr": "> 10",
-      "alertExprNote": "Alert when drops exceed 10/sec"
+      "clearInterval": 0,
+      "originId": "vl-AqfYJQ3GpogVM3po-9g",
+      "useValue": "output",
+      "min": "0",
+      "name": "rx_errors",
+      "noData": "Do not trigger an alert",
+      "statusDisplayNames": []
+    },
+    {
+      "max": "",
+      "triggerInterval": 5,
+      "dataType": 7,
+      "maxDigits": 4,
+      "description": "Receive packets per second",
+      "interpretMethod": "namevalue",
+      "interpretExpr": "rx_packets",
+      "type": "gauge",
+      "clearInterval": 0,
+      "originId": "HjwWYDzORsGPdhD0BWtDyg",
+      "useValue": "output",
+      "min": "0",
+      "name": "rx_packets",
+      "noData": "Do not trigger an alert",
+      "statusDisplayNames": []
+    },
+    {
+      "max": "",
+      "triggerInterval": 5,
+      "dataType": 7,
+      "maxDigits": 4,
+      "description": "Transmit bytes per second",
+      "interpretMethod": "namevalue",
+      "interpretExpr": "tx_bytes",
+      "type": "gauge",
+      "clearInterval": 0,
+      "originId": "ZhKdX5pbTdiruNzJ0LlS1g",
+      "useValue": "output",
+      "min": "0",
+      "name": "tx_bytes",
+      "noData": "Do not trigger an alert",
+      "statusDisplayNames": []
+    },
+    {
+      "max": "",
+      "triggerInterval": 5,
+      "dataType": 7,
+      "maxDigits": 4,
+      "description": "Transmit packets dropped per second",
+      "interpretMethod": "namevalue",
+      "threshold": "> 0",
+      "interpretExpr": "tx_dropped",
+      "type": "gauge",
+      "clearInterval": 0,
+      "originId": "edLaWdvrQPu4vpqDEEuofQ",
+      "useValue": "output",
+      "min": "0",
+      "name": "tx_dropped",
+      "noData": "Do not trigger an alert",
+      "statusDisplayNames": []
+    },
+    {
+      "max": "",
+      "triggerInterval": 5,
+      "dataType": 7,
+      "maxDigits": 4,
+      "description": "Transmit errors per second",
+      "interpretMethod": "namevalue",
+      "threshold": "> 0",
+      "interpretExpr": "tx_errors",
+      "type": "gauge",
+      "clearInterval": 0,
+      "originId": "vWFH5RNaSjuEzRMySnuZYg",
+      "useValue": "output",
+      "min": "0",
+      "name": "tx_errors",
+      "noData": "Do not trigger an alert",
+      "statusDisplayNames": []
+    },
+    {
+      "max": "",
+      "triggerInterval": 5,
+      "dataType": 7,
+      "maxDigits": 4,
+      "description": "Transmit packets per second",
+      "interpretMethod": "namevalue",
+      "interpretExpr": "tx_packets",
+      "type": "gauge",
+      "clearInterval": 0,
+      "originId": "XBd6jZ-pTIiYjhRbT5Y1vA",
+      "useValue": "output",
+      "min": "0",
+      "name": "tx_packets",
+      "noData": "Do not trigger an alert",
+      "statusDisplayNames": []
     }
   ],
-  "collectScript": {
-    "type": "embeddedGroovyScript",
-    "content": "// v4 - Network Collection BATCHSCRIPT\nimport groovy.json.JsonSlurper\n\nclass ThanosClient {\n    private String host, token, baseUrl\n    private int port\n    private boolean ssl\n\n    ThanosClient(Map p) {\n        this.host = p.get(\"kubevirt.thanos.host\")\n        this.token = p.get(\"kubevirt.thanos.token\")\n        this.port = (p.get(\"kubevirt.thanos.port\") ?: \"443\") as int\n        this.ssl = (p.get(\"kubevirt.thanos.ssl\") ?: \"true\").toLowerCase() == \"true\"\n        if (!host || !token) throw new IllegalArgumentException(\"Missing config\")\n        def proto = ssl ? \"https\" : \"http\"\n        def ps = ((ssl && port == 443) || (!ssl && port == 80)) ? \"\" : \":${port}\"\n        this.baseUrl = \"${proto}://${host}${ps}\"\n    }\n\n    Map queryGroupedByKey(String promql, List<String> keys, String sep = \"/\") {\n        def results = [:]\n        def url = \"${baseUrl}/api/v1/query?query=${java.net.URLEncoder.encode(promql, 'UTF-8')}\"\n        try {\n            def resp = executeHttpGet(url)\n            def json = new JsonSlurper().parseText(resp)\n            if (json.status != \"success\" || !json.data?.result) return results\n            json.data.result.each { r ->\n                def labels = r.metric ?: [:]\n                def keyParts = keys.collect { labels[it] ?: \"\" }\n                if (keyParts.every { it }) results[keyParts.join(sep)] = r.value ? r.value[1] : null\n            }\n        } catch (Exception e) {}\n        return results\n    }\n\n    private String executeHttpGet(String url) {\n        try {\n            def http = Class.forName(\"com.santaba.agent.groovyapi.http.HTTP\").newInstance()\n            http.open(url); http.setHeader(\"Authorization\", \"Bearer ${token}\")\n            def r = http.get(); http.close(); return r\n        } catch (ClassNotFoundException e) {\n            def c = new URL(url).openConnection() as HttpURLConnection\n            c.setRequestMethod(\"GET\"); c.setRequestProperty(\"Authorization\", \"Bearer ${token}\")\n            c.setConnectTimeout(30000); c.setReadTimeout(60000)\n            if (ssl) { try {\n                def sc = javax.net.ssl.SSLContext.getInstance(\"TLS\")\n                sc.init(null, [new javax.net.ssl.X509TrustManager() {\n                    void checkClientTrusted(java.security.cert.X509Certificate[] x, String a) {}\n                    void checkServerTrusted(java.security.cert.X509Certificate[] x, String a) {}\n                    java.security.cert.X509Certificate[] getAcceptedIssuers() { null }\n                }] as javax.net.ssl.TrustManager[], new java.security.SecureRandom())\n                c.setSSLSocketFactory(sc.getSocketFactory()); c.setHostnameVerifier({ h, s -> true })\n            } catch (Exception ex) {} }\n            if (c.getResponseCode() != 200) throw new RuntimeException(\"HTTP ${c.getResponseCode()}\")\n            return c.getInputStream().text\n        }\n    }\n}\n\ntry {\n    def client = new ThanosClient(hostProps)\n    def metrics = [\n        \"rx_bytes\": 'rate(kubevirt_vmi_network_receive_bytes_total[5m])',\n        \"tx_bytes\": 'rate(kubevirt_vmi_network_transmit_bytes_total[5m])',\n        \"rx_packets\": 'rate(kubevirt_vmi_network_receive_packets_total[5m])',\n        \"tx_packets\": 'rate(kubevirt_vmi_network_transmit_packets_total[5m])',\n        \"rx_errors\": 'rate(kubevirt_vmi_network_receive_errors_total[5m])',\n        \"tx_errors\": 'rate(kubevirt_vmi_network_transmit_errors_total[5m])',\n        \"rx_dropped\": 'rate(kubevirt_vmi_network_receive_packets_dropped_total[5m])',\n        \"tx_dropped\": 'rate(kubevirt_vmi_network_transmit_packets_dropped_total[5m])'\n    ]\n    def allData = [:]\n    metrics.each { dp, q -> client.queryGroupedByKey(q, [\"namespace\", \"name\", \"interface\"]).each { k, v -> if (!allData[k]) allData[k] = [:]; allData[k][dp] = v } }\n    allData.each { wv, dps -> dps.each { dp, val -> if (val != null) println \"${wv}.${dp}=${val}\" } }\n    return 0\n} catch (Exception e) {\n    System.err.println \"ERROR: ${e.message}\"\n    return 1\n}"
+  "searchKeywords": "",
+  "displayedAs": "KubeVirt VMI Network",
+  "description": "Network metrics for KubeVirt Virtual Machine Instances via Thanos Querier",
+  "appliesTo": "kubevirt.thanos.host && kubevirt.thanos.token",
+  "activeDiscovery": {
+    "groupExpr": "auto.vmi.namespace",
+    "deleteInactiveInstances": true,
+    "groupMethod": "ilp",
+    "discoveryMethod": "ad_script",
+    "autoDeleteInstances": true,
+    "disableDiscoveredInstances": false,
+    "filters": [],
+    "params": {
+      "type": "groovy",
+      "content": "// KubeVirt VMI Active Discovery for Network\nimport groovy.json.JsonSlurper\nimport javax.net.ssl.*\nimport java.security.cert.X509Certificate\n\ndef host = hostProps.get(\"kubevirt.thanos.host\")\ndef token = hostProps.get(\"kubevirt.thanos.token\")\ndef port = hostProps.get(\"kubevirt.thanos.port\") ?: \"443\"\ndef useSsl = (hostProps.get(\"kubevirt.thanos.ssl\") ?: \"true\").toLowerCase() == \"true\"\n\nif (!host || !token) { return 1 }\n\ndef trustAllCerts = [\n    checkClientTrusted: { chain, authType -> },\n    checkServerTrusted: { chain, authType -> },\n    getAcceptedIssuers: { null }\n] as X509TrustManager\n\ndef sc = SSLContext.getInstance(\"TLS\")\nsc.init(null, [trustAllCerts] as TrustManager[], null)\nHttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory())\nHttpsURLConnection.setDefaultHostnameVerifier({ hostname, session -> true } as HostnameVerifier)\n\n\ndef proto = useSsl ? \"https\" : \"http\"\ndef baseUrl = \"${proto}://${host}:${port}\"\n\ntry {\n    def query = 'kubevirt_vmi_info'\n    def encoded = java.net.URLEncoder.encode(query, \"UTF-8\")\n    def url = new URL(\"${baseUrl}/api/v1/query?query=${encoded}\")\n    def conn = url.openConnection()\n    conn.setRequestProperty(\"Authorization\", \"Bearer ${token}\")\n    conn.setConnectTimeout(30000)\n    conn.setReadTimeout(30000)\n    \n    if (conn.responseCode == 200) {\n        def response = conn.inputStream.text\n        def json = new JsonSlurper().parseText(response)\n        \n        if (json.status == \"success\" && json.data?.result) {\n            json.data.result.each { result ->\n                def labels = result.metric\n                def name = labels.name ?: \"unknown\"\n                def namespace = labels.namespace ?: \"default\"\n                def node = labels.node ?: \"unknown\"\n                \n                println \"${name}##${name}##VMI ${name} Network metrics####auto.vmi.name=${name}&auto.vmi.namespace=${namespace}&auto.vmi.node=${node}\"\n            }\n        }\n    }\n} catch (Exception e) { return 1 }\nreturn 0\n"
+    },
+    "discoveryInterval": "15m",
+    "enabled": true,
+    "showDeletedInstanceDays": 0
   },
-  "graphs": [
-    {
-      "name": "Network Throughput",
-      "title": "Network Throughput (bytes/sec)",
-      "dataPoints": [
-        {"name": "rx_bytes", "aggregation": "avg"},
-        {"name": "tx_bytes", "aggregation": "avg"}
-      ]
-    },
-    {
-      "name": "Packet Rate",
-      "title": "Packet Rate (packets/sec)",
-      "dataPoints": [
-        {"name": "rx_packets", "aggregation": "avg"},
-        {"name": "tx_packets", "aggregation": "avg"}
-      ]
-    },
-    {
-      "name": "Errors and Drops",
-      "title": "Network Errors and Dropped Packets",
-      "dataPoints": [
-        {"name": "rx_errors", "aggregation": "avg"},
-        {"name": "tx_errors", "aggregation": "avg"},
-        {"name": "rx_dropped", "aggregation": "avg"},
-        {"name": "tx_dropped", "aggregation": "avg"}
-      ]
-    }
-  ]
+  "collectionAttrs": {
+    "type": "groovy",
+    "content": "// KubeVirt VMI Network Metrics\nimport groovy.json.JsonSlurper\nimport javax.net.ssl.*\nimport java.security.cert.X509Certificate\n\ndef host = hostProps.get(\"kubevirt.thanos.host\")\ndef token = hostProps.get(\"kubevirt.thanos.token\")\ndef vmiName = instanceProps.get(\"wildvalue\")\n\nif (!host || !token || !vmiName) {\n    println(\"rx_bytes:0\")\n    println(\"tx_bytes:0\")\n    println(\"rx_packets:0\")\n    println(\"tx_packets:0\")\n    println(\"rx_errors:0\")\n    println(\"tx_errors:0\")\n    println(\"rx_dropped:0\")\n    println(\"tx_dropped:0\")\n    return 0\n}\n\ndef trustAllCerts = [\n    checkClientTrusted: { chain, authType -> },\n    checkServerTrusted: { chain, authType -> },\n    getAcceptedIssuers: { null }\n] as X509TrustManager\n\ndef sc = SSLContext.getInstance(\"TLS\")\nsc.init(null, [trustAllCerts] as TrustManager[], null)\nHttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory())\nHttpsURLConnection.setDefaultHostnameVerifier({ hostname, session -> true } as HostnameVerifier)\n\ndef baseUrl = \"https://${host}:443\"\n\ndef rxBytes = 0\ndef txBytes = 0\ndef rxPkts = 0\ndef txPkts = 0\ndef rxErr = 0\ndef txErr = 0\ndef rxDrop = 0\ndef txDrop = 0\n\ntry {\n    def query = \"sum(rate(kubevirt_vmi_network_receive_bytes_total{name=\\\"${vmiName}\\\"}[5m]))\"\n    def encoded = java.net.URLEncoder.encode(query, \"UTF-8\")\n    def url = new URL(\"${baseUrl}/api/v1/query?query=${encoded}\")\n    def conn = url.openConnection()\n    conn.setRequestProperty(\"Authorization\", \"Bearer ${token}\")\n    conn.setConnectTimeout(30000)\n    conn.setReadTimeout(30000)\n    if (conn.responseCode == 200) {\n        def response = conn.inputStream.text\n        def json = new JsonSlurper().parseText(response)\n        if (json.status == \"success\" && json.data?.result?.size() > 0) {\n            rxBytes = json.data.result[0].value[1] as Double\n        }\n    }\n} catch (Exception e) {}\n\ntry {\n    def query = \"sum(rate(kubevirt_vmi_network_transmit_bytes_total{name=\\\"${vmiName}\\\"}[5m]))\"\n    def encoded = java.net.URLEncoder.encode(query, \"UTF-8\")\n    def url = new URL(\"${baseUrl}/api/v1/query?query=${encoded}\")\n    def conn = url.openConnection()\n    conn.setRequestProperty(\"Authorization\", \"Bearer ${token}\")\n    conn.setConnectTimeout(30000)\n    conn.setReadTimeout(30000)\n    if (conn.responseCode == 200) {\n        def response = conn.inputStream.text\n        def json = new JsonSlurper().parseText(response)\n        if (json.status == \"success\" && json.data?.result?.size() > 0) {\n            txBytes = json.data.result[0].value[1] as Double\n        }\n    }\n} catch (Exception e) {}\n\ntry {\n    def query = \"sum(rate(kubevirt_vmi_network_receive_packets_total{name=\\\"${vmiName}\\\"}[5m]))\"\n    def encoded = java.net.URLEncoder.encode(query, \"UTF-8\")\n    def url = new URL(\"${baseUrl}/api/v1/query?query=${encoded}\")\n    def conn = url.openConnection()\n    conn.setRequestProperty(\"Authorization\", \"Bearer ${token}\")\n    conn.setConnectTimeout(30000)\n    conn.setReadTimeout(30000)\n    if (conn.responseCode == 200) {\n        def response = conn.inputStream.text\n        def json = new JsonSlurper().parseText(response)\n        if (json.status == \"success\" && json.data?.result?.size() > 0) {\n            rxPkts = json.data.result[0].value[1] as Double\n        }\n    }\n} catch (Exception e) {}\n\ntry {\n    def query = \"sum(rate(kubevirt_vmi_network_transmit_packets_total{name=\\\"${vmiName}\\\"}[5m]))\"\n    def encoded = java.net.URLEncoder.encode(query, \"UTF-8\")\n    def url = new URL(\"${baseUrl}/api/v1/query?query=${encoded}\")\n    def conn = url.openConnection()\n    conn.setRequestProperty(\"Authorization\", \"Bearer ${token}\")\n    conn.setConnectTimeout(30000)\n    conn.setReadTimeout(30000)\n    if (conn.responseCode == 200) {\n        def response = conn.inputStream.text\n        def json = new JsonSlurper().parseText(response)\n        if (json.status == \"success\" && json.data?.result?.size() > 0) {\n            txPkts = json.data.result[0].value[1] as Double\n        }\n    }\n} catch (Exception e) {}\n\ntry {\n    def query = \"sum(rate(kubevirt_vmi_network_receive_errors_total{name=\\\"${vmiName}\\\"}[5m]))\"\n    def encoded = java.net.URLEncoder.encode(query, \"UTF-8\")\n    def url = new URL(\"${baseUrl}/api/v1/query?query=${encoded}\")\n    def conn = url.openConnection()\n    conn.setRequestProperty(\"Authorization\", \"Bearer ${token}\")\n    conn.setConnectTimeout(30000)\n    conn.setReadTimeout(30000)\n    if (conn.responseCode == 200) {\n        def response = conn.inputStream.text\n        def json = new JsonSlurper().parseText(response)\n        if (json.status == \"success\" && json.data?.result?.size() > 0) {\n            rxErr = json.data.result[0].value[1] as Double\n        }\n    }\n} catch (Exception e) {}\n\ntry {\n    def query = \"sum(rate(kubevirt_vmi_network_transmit_errors_total{name=\\\"${vmiName}\\\"}[5m]))\"\n    def encoded = java.net.URLEncoder.encode(query, \"UTF-8\")\n    def url = new URL(\"${baseUrl}/api/v1/query?query=${encoded}\")\n    def conn = url.openConnection()\n    conn.setRequestProperty(\"Authorization\", \"Bearer ${token}\")\n    conn.setConnectTimeout(30000)\n    conn.setReadTimeout(30000)\n    if (conn.responseCode == 200) {\n        def response = conn.inputStream.text\n        def json = new JsonSlurper().parseText(response)\n        if (json.status == \"success\" && json.data?.result?.size() > 0) {\n            txErr = json.data.result[0].value[1] as Double\n        }\n    }\n} catch (Exception e) {}\n\ntry {\n    def query = \"sum(rate(kubevirt_vmi_network_receive_packets_dropped_total{name=\\\"${vmiName}\\\"}[5m]))\"\n    def encoded = java.net.URLEncoder.encode(query, \"UTF-8\")\n    def url = new URL(\"${baseUrl}/api/v1/query?query=${encoded}\")\n    def conn = url.openConnection()\n    conn.setRequestProperty(\"Authorization\", \"Bearer ${token}\")\n    conn.setConnectTimeout(30000)\n    conn.setReadTimeout(30000)\n    if (conn.responseCode == 200) {\n        def response = conn.inputStream.text\n        def json = new JsonSlurper().parseText(response)\n        if (json.status == \"success\" && json.data?.result?.size() > 0) {\n            rxDrop = json.data.result[0].value[1] as Double\n        }\n    }\n} catch (Exception e) {}\n\ntry {\n    def query = \"sum(rate(kubevirt_vmi_network_transmit_packets_dropped_total{name=\\\"${vmiName}\\\"}[5m]))\"\n    def encoded = java.net.URLEncoder.encode(query, \"UTF-8\")\n    def url = new URL(\"${baseUrl}/api/v1/query?query=${encoded}\")\n    def conn = url.openConnection()\n    conn.setRequestProperty(\"Authorization\", \"Bearer ${token}\")\n    conn.setConnectTimeout(30000)\n    conn.setReadTimeout(30000)\n    if (conn.responseCode == 200) {\n        def response = conn.inputStream.text\n        def json = new JsonSlurper().parseText(response)\n        if (json.status == \"success\" && json.data?.result?.size() > 0) {\n            txDrop = json.data.result[0].value[1] as Double\n        }\n    }\n} catch (Exception e) {}\n\nprintln(\"rx_bytes:\" + rxBytes)\nprintln(\"tx_bytes:\" + txBytes)\nprintln(\"rx_packets:\" + rxPkts)\nprintln(\"tx_packets:\" + txPkts)\nprintln(\"rx_errors:\" + rxErr)\nprintln(\"tx_errors:\" + txErr)\nprintln(\"rx_dropped:\" + rxDrop)\nprintln(\"tx_dropped:\" + txDrop)\n\nreturn 0"
+  },
+  "type": 0,
+  "technicalNotes": "",
+  "useWildValueAsUniqueIdentifier": false,
+  "version": 1768620816,
+  "registryMetadata": {
+    "currentUuid": "jZAF06lJTgSXlsgbz_tSzw",
+    "originalUuid": "jZAF06lJTgSXlsgbz_tSzw",
+    "locatorId": "",
+    "authorCompanyUuid": "56c5c6a6-58e4-4b5c-9d7e-629ce3fe75cf",
+    "registryVersion": "1.0.0",
+    "checksum": "89eb223eba3291391789e42ac30e6d31",
+    "namespace": "",
+    "registryId": "",
+    "isChangedFromOrigin": false,
+    "status": ""
+  },
+  "multiInstance": true,
+  "name": "KubeVirt_VMI_Network",
+  "collectionInterval": "1m",
+  "dataSourceType": 1,
+  "group": "KubeVirt"
 }

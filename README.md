@@ -81,7 +81,7 @@ This project provides a suite of LogicMonitor DataSources to monitor KubeVirt vi
 | KubeVirt_VMI_Memory | 11442180 | Per VM | 1 min | Memory usage, available, cached, swap |
 | KubeVirt_VMI_Network | 11442181 | Per VM | 1 min | Network throughput, packets, errors |
 | KubeVirt_VMI_Storage | 11442182 | Per VM | 1 min | Disk throughput, IOPS, latency |
-| KubeVirt_Cluster_Overview | 11442177 | Cluster | 5 min | Cluster-wide VM counts and health |
+| KubeVirt_Cluster_Overview_v2 | 11442177 | Cluster | 5 min | Cluster-wide VM counts and health |
 
 All VMI DataSources use **Instance Level Property (ILP) grouping** by namespace, so VMs are automatically organized by their Kubernetes namespace in LogicMonitor.
 
@@ -140,17 +140,20 @@ All VMI DataSources use **Instance Level Property (ILP) grouping** by namespace,
 | `flush_requests` | Flush operations/sec |
 | `flush_latency_ms` | Average flush latency (ms) |
 
-### Cluster Overview (8 datapoints)
+### Cluster Overview (11 datapoints)
 | Metric | Description |
 |--------|-------------|
-| `vmis_running` | Total running VMIs |
-| `vmis_total` | Total VMIs across all states |
-| `nodes_total` | Total nodes in cluster |
+| `vms_total` | Total VMs across all states |
+| `vms_running` | Total running VMs |
+| `allocatable_nodes` | Allocatable nodes in cluster |
+| `nodes_with_kvm` | Nodes with KVM capability |
 | `virt_api_up` | virt-api pods running |
 | `virt_controller_up` | virt-controller pods running |
 | `virt_handler_up` | virt-handler pods running |
-| `virt_operator_up` | virt-operator pods running |
+| `system_health` | Overall system health status |
+| `migrations_pending` | Pending VM migrations |
 | `migrations_running` | Active VM migrations |
+| `migrations_scheduling` | VM migrations in scheduling state |
 
 ## Graphs Included
 

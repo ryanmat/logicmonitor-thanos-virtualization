@@ -1,101 +1,188 @@
 {
-  "name": "KubeVirt_VMI_Storage",
-  "displayName": "KubeVirt VMI Storage",
-  "description": "Storage metrics per drive for KubeVirt Virtual Machine Instances",
-  "group": "KubeVirt",
-  "tags": "kubevirt,openshift,virtualization,storage",
-  "appliesTo": "kubevirt.thanos.host && kubevirt.thanos.token",
-  "technology": "Collects per-drive storage metrics from Thanos/Prometheus for KubeVirt VMIs",
-  "collectMethod": "batchscript",
-  "collectInterval": 60,
-  "multiInstance": true,
-  "hasMultiInstances": true,
-  "useWildValueAsUniqueIdentifier": true,
-  "activeDiscovery": {
-    "method": "ad_script",
-    "schedule": 900,
-    "deleteInactiveInstances": true,
-    "disableInstance": false,
-    "script": {
-      "type": "embeddedGroovyScript",
-      "content": "// v4 - Storage Drive Discovery\nimport groovy.json.JsonSlurper\n\nclass ThanosClient {\n    private String host, token, baseUrl\n    private int port\n    private boolean ssl\n\n    ThanosClient(Map p) {\n        this.host = p.get(\"kubevirt.thanos.host\")\n        this.token = p.get(\"kubevirt.thanos.token\")\n        this.port = (p.get(\"kubevirt.thanos.port\") ?: \"443\") as int\n        this.ssl = (p.get(\"kubevirt.thanos.ssl\") ?: \"true\").toLowerCase() == \"true\"\n        if (!host || !token) throw new IllegalArgumentException(\"Missing config\")\n        def proto = ssl ? \"https\" : \"http\"\n        def ps = ((ssl && port == 443) || (!ssl && port == 80)) ? \"\" : \":${port}\"\n        this.baseUrl = \"${proto}://${host}${ps}\"\n    }\n\n    List queryWithLabels(String promql) {\n        def url = \"${baseUrl}/api/v1/query?query=${java.net.URLEncoder.encode(promql, 'UTF-8')}\"\n        try {\n            def resp = executeHttpGet(url)\n            def json = new JsonSlurper().parseText(resp)\n            if (json.status != \"success\" || !json.data?.result) return []\n            return json.data.result.collect { r -> [r.metric ?: [:], r.value ? r.value[1] : null] }\n        } catch (Exception e) { return [] }\n    }\n\n    private String executeHttpGet(String url) {\n        try {\n            def http = Class.forName(\"com.santaba.agent.groovyapi.http.HTTP\").newInstance()\n            http.open(url); http.setHeader(\"Authorization\", \"Bearer ${token}\")\n            def r = http.get(); http.close(); return r\n        } catch (ClassNotFoundException e) {\n            def c = new URL(url).openConnection() as HttpURLConnection\n            c.setRequestMethod(\"GET\"); c.setRequestProperty(\"Authorization\", \"Bearer ${token}\")\n            c.setConnectTimeout(30000); c.setReadTimeout(60000)\n            if (ssl) { try {\n                def sc = javax.net.ssl.SSLContext.getInstance(\"TLS\")\n                sc.init(null, [new javax.net.ssl.X509TrustManager() {\n                    void checkClientTrusted(java.security.cert.X509Certificate[] x, String a) {}\n                    void checkServerTrusted(java.security.cert.X509Certificate[] x, String a) {}\n                    java.security.cert.X509Certificate[] getAcceptedIssuers() { null }\n                }] as javax.net.ssl.TrustManager[], new java.security.SecureRandom())\n                c.setSSLSocketFactory(sc.getSocketFactory()); c.setHostnameVerifier({ h, s -> true })\n            } catch (Exception ex) {} }\n            if (c.getResponseCode() != 200) throw new RuntimeException(\"HTTP ${c.getResponseCode()}\")\n            return c.getInputStream().text\n        }\n    }\n}\n\ntry {\n    def client = new ThanosClient(hostProps)\n    def discovered = [] as Set\n    client.queryWithLabels('kubevirt_vmi_storage_read_traffic_bytes_total').each { labels, value ->\n        def ns = labels.get(\"namespace\")\n        def name = labels.get(\"name\")\n        def drive = labels.get(\"drive\")\n        if (!ns || !name || !drive) return\n        def key = \"${ns}/${name}/${drive}\"\n        if (discovered.contains(key)) return\n        discovered.add(key)\n        def props = [\"auto.kubevirt.namespace=${ns}\", \"auto.kubevirt.vmi_name=${name}\", \"auto.kubevirt.drive=${drive}\"]\n        println \"${key}##${name}/${drive}##Drive ${drive} on VM ${name}####${props.join('&')}\"\n    }\n    return 0\n} catch (Exception e) {\n    System.err.println \"ERROR: ${e.message}\"\n    return 1\n}"
-    }
-  },
-  "dataPoints": [
+  "collectionMethod": "script",
+  "datapoints": [
     {
-      "name": "read_bytes",
-      "description": "Read throughput (bytes/sec)",
-      "type": "gauge"
-    },
-    {
-      "name": "write_bytes",
-      "description": "Write throughput (bytes/sec)",
-      "type": "gauge"
-    },
-    {
-      "name": "read_iops",
-      "description": "Read operations per second",
-      "type": "gauge"
-    },
-    {
-      "name": "write_iops",
-      "description": "Write operations per second",
-      "type": "gauge"
-    },
-    {
-      "name": "read_latency_ms",
-      "description": "Average read latency (milliseconds)",
+      "max": "",
+      "triggerInterval": 5,
+      "dataType": 7,
+      "maxDigits": 4,
+      "description": "Flush latency in milliseconds",
+      "interpretMethod": "namevalue",
+      "interpretExpr": "flush_latency_ms",
       "type": "gauge",
-      "alertExpr": "> 50",
-      "alertExprNote": "Alert when read latency exceeds 50ms"
-    },
-    {
-      "name": "write_latency_ms",
-      "description": "Average write latency (milliseconds)",
-      "type": "gauge",
-      "alertExpr": "> 50",
-      "alertExprNote": "Alert when write latency exceeds 50ms"
-    },
-    {
-      "name": "flush_requests",
-      "description": "Flush operations per second",
-      "type": "gauge"
-    },
-    {
+      "clearInterval": 0,
+      "originId": "ybUjLJbyTcuj66GCp4__Yw",
+      "useValue": "output",
+      "min": "0",
       "name": "flush_latency_ms",
-      "description": "Average flush latency (milliseconds)",
-      "type": "gauge"
+      "noData": "Do not trigger an alert",
+      "statusDisplayNames": []
+    },
+    {
+      "max": "",
+      "triggerInterval": 5,
+      "dataType": 7,
+      "maxDigits": 4,
+      "description": "Flush requests per second",
+      "interpretMethod": "namevalue",
+      "interpretExpr": "flush_requests",
+      "type": "gauge",
+      "clearInterval": 0,
+      "originId": "294jG7XaTQGg69y8Io5kpA",
+      "useValue": "output",
+      "min": "0",
+      "name": "flush_requests",
+      "noData": "Do not trigger an alert",
+      "statusDisplayNames": []
+    },
+    {
+      "max": "",
+      "triggerInterval": 5,
+      "dataType": 7,
+      "maxDigits": 4,
+      "description": "Read bytes per second",
+      "interpretMethod": "namevalue",
+      "interpretExpr": "read_bytes",
+      "type": "gauge",
+      "clearInterval": 0,
+      "originId": "gGH1Oc21TxqCpMqffpKacw",
+      "useValue": "output",
+      "min": "0",
+      "name": "read_bytes",
+      "noData": "Do not trigger an alert",
+      "statusDisplayNames": []
+    },
+    {
+      "max": "",
+      "triggerInterval": 5,
+      "dataType": 7,
+      "maxDigits": 4,
+      "description": "Read IOPS",
+      "interpretMethod": "namevalue",
+      "interpretExpr": "read_iops",
+      "type": "gauge",
+      "clearInterval": 0,
+      "originId": "tguNMt4pTne7Zud-WBn17Q",
+      "useValue": "output",
+      "min": "0",
+      "name": "read_iops",
+      "noData": "Do not trigger an alert",
+      "statusDisplayNames": []
+    },
+    {
+      "max": "",
+      "triggerInterval": 5,
+      "dataType": 7,
+      "maxDigits": 4,
+      "description": "Read latency in milliseconds",
+      "interpretMethod": "namevalue",
+      "threshold": "> 100",
+      "interpretExpr": "read_latency_ms",
+      "type": "gauge",
+      "clearInterval": 0,
+      "originId": "c4D_cYbkSR-Eo5zYc1_O_A",
+      "useValue": "output",
+      "min": "0",
+      "name": "read_latency_ms",
+      "noData": "Do not trigger an alert",
+      "statusDisplayNames": []
+    },
+    {
+      "max": "",
+      "triggerInterval": 5,
+      "dataType": 7,
+      "maxDigits": 4,
+      "description": "Write bytes per second",
+      "interpretMethod": "namevalue",
+      "interpretExpr": "write_bytes",
+      "type": "gauge",
+      "clearInterval": 0,
+      "originId": "LykI_e-_QlWGLmMUEXHSIg",
+      "useValue": "output",
+      "min": "0",
+      "name": "write_bytes",
+      "noData": "Do not trigger an alert",
+      "statusDisplayNames": []
+    },
+    {
+      "max": "",
+      "triggerInterval": 5,
+      "dataType": 7,
+      "maxDigits": 4,
+      "description": "Write IOPS",
+      "interpretMethod": "namevalue",
+      "interpretExpr": "write_iops",
+      "type": "gauge",
+      "clearInterval": 0,
+      "originId": "HZ18J_tmQuuLKKtu9TJdZg",
+      "useValue": "output",
+      "min": "0",
+      "name": "write_iops",
+      "noData": "Do not trigger an alert",
+      "statusDisplayNames": []
+    },
+    {
+      "max": "",
+      "triggerInterval": 5,
+      "dataType": 7,
+      "maxDigits": 4,
+      "description": "Write latency in milliseconds",
+      "interpretMethod": "namevalue",
+      "threshold": "> 100",
+      "interpretExpr": "write_latency_ms",
+      "type": "gauge",
+      "clearInterval": 0,
+      "originId": "9Dl7EVUKRNSY6g_7w8iCRw",
+      "useValue": "output",
+      "min": "0",
+      "name": "write_latency_ms",
+      "noData": "Do not trigger an alert",
+      "statusDisplayNames": []
     }
   ],
-  "collectScript": {
-    "type": "embeddedGroovyScript",
-    "content": "// v4 - Storage Collection BATCHSCRIPT\nimport groovy.json.JsonSlurper\n\nclass ThanosClient {\n    private String host, token, baseUrl\n    private int port\n    private boolean ssl\n\n    ThanosClient(Map p) {\n        this.host = p.get(\"kubevirt.thanos.host\")\n        this.token = p.get(\"kubevirt.thanos.token\")\n        this.port = (p.get(\"kubevirt.thanos.port\") ?: \"443\") as int\n        this.ssl = (p.get(\"kubevirt.thanos.ssl\") ?: \"true\").toLowerCase() == \"true\"\n        if (!host || !token) throw new IllegalArgumentException(\"Missing config\")\n        def proto = ssl ? \"https\" : \"http\"\n        def ps = ((ssl && port == 443) || (!ssl && port == 80)) ? \"\" : \":${port}\"\n        this.baseUrl = \"${proto}://${host}${ps}\"\n    }\n\n    Map queryGroupedByKey(String promql, List<String> keys, String sep = \"/\") {\n        def results = [:]\n        def url = \"${baseUrl}/api/v1/query?query=${java.net.URLEncoder.encode(promql, 'UTF-8')}\"\n        try {\n            def resp = executeHttpGet(url)\n            def json = new JsonSlurper().parseText(resp)\n            if (json.status != \"success\" || !json.data?.result) return results\n            json.data.result.each { r ->\n                def labels = r.metric ?: [:]\n                def keyParts = keys.collect { labels[it] ?: \"\" }\n                if (keyParts.every { it }) results[keyParts.join(sep)] = r.value ? r.value[1] : null\n            }\n        } catch (Exception e) {}\n        return results\n    }\n\n    private String executeHttpGet(String url) {\n        try {\n            def http = Class.forName(\"com.santaba.agent.groovyapi.http.HTTP\").newInstance()\n            http.open(url); http.setHeader(\"Authorization\", \"Bearer ${token}\")\n            def r = http.get(); http.close(); return r\n        } catch (ClassNotFoundException e) {\n            def c = new URL(url).openConnection() as HttpURLConnection\n            c.setRequestMethod(\"GET\"); c.setRequestProperty(\"Authorization\", \"Bearer ${token}\")\n            c.setConnectTimeout(30000); c.setReadTimeout(60000)\n            if (ssl) { try {\n                def sc = javax.net.ssl.SSLContext.getInstance(\"TLS\")\n                sc.init(null, [new javax.net.ssl.X509TrustManager() {\n                    void checkClientTrusted(java.security.cert.X509Certificate[] x, String a) {}\n                    void checkServerTrusted(java.security.cert.X509Certificate[] x, String a) {}\n                    java.security.cert.X509Certificate[] getAcceptedIssuers() { null }\n                }] as javax.net.ssl.TrustManager[], new java.security.SecureRandom())\n                c.setSSLSocketFactory(sc.getSocketFactory()); c.setHostnameVerifier({ h, s -> true })\n            } catch (Exception ex) {} }\n            if (c.getResponseCode() != 200) throw new RuntimeException(\"HTTP ${c.getResponseCode()}\")\n            return c.getInputStream().text\n        }\n    }\n}\n\ntry {\n    def client = new ThanosClient(hostProps)\n    def metrics = [\n        \"read_bytes\": 'rate(kubevirt_vmi_storage_read_traffic_bytes_total[5m])',\n        \"write_bytes\": 'rate(kubevirt_vmi_storage_write_traffic_bytes_total[5m])',\n        \"read_iops\": 'rate(kubevirt_vmi_storage_iops_read_total[5m])',\n        \"write_iops\": 'rate(kubevirt_vmi_storage_iops_write_total[5m])',\n        \"read_time_rate\": 'rate(kubevirt_vmi_storage_read_times_seconds_total[5m])',\n        \"write_time_rate\": 'rate(kubevirt_vmi_storage_write_times_seconds_total[5m])',\n        \"flush_requests\": 'rate(kubevirt_vmi_storage_flush_requests_total[5m])',\n        \"flush_time_rate\": 'rate(kubevirt_vmi_storage_flush_times_seconds_total[5m])'\n    ]\n    def allData = [:]\n    metrics.each { dp, q -> client.queryGroupedByKey(q, [\"namespace\", \"name\", \"drive\"]).each { k, v -> if (!allData[k]) allData[k] = [:]; allData[k][dp] = v } }\n    allData.each { wv, dps ->\n        if (dps.read_bytes != null) println \"${wv}.read_bytes=${dps.read_bytes}\"\n        if (dps.write_bytes != null) println \"${wv}.write_bytes=${dps.write_bytes}\"\n        if (dps.read_iops != null) println \"${wv}.read_iops=${dps.read_iops}\"\n        if (dps.write_iops != null) println \"${wv}.write_iops=${dps.write_iops}\"\n        if (dps.read_time_rate != null && dps.read_iops != null) {\n            def ri = dps.read_iops as Double\n            if (ri > 0) println \"${wv}.read_latency_ms=${(dps.read_time_rate as Double) / ri * 1000}\"\n        }\n        if (dps.write_time_rate != null && dps.write_iops != null) {\n            def wi = dps.write_iops as Double\n            if (wi > 0) println \"${wv}.write_latency_ms=${(dps.write_time_rate as Double) / wi * 1000}\"\n        }\n        if (dps.flush_requests != null) println \"${wv}.flush_requests=${dps.flush_requests}\"\n        if (dps.flush_time_rate != null && dps.flush_requests != null) {\n            def fr = dps.flush_requests as Double\n            if (fr > 0) println \"${wv}.flush_latency_ms=${(dps.flush_time_rate as Double) / fr * 1000}\"\n        }\n    }\n    return 0\n} catch (Exception e) {\n    System.err.println \"ERROR: ${e.message}\"\n    return 1\n}"
+  "searchKeywords": "",
+  "displayedAs": "KubeVirt VMI Storage",
+  "description": "Storage metrics for KubeVirt Virtual Machine Instances via Thanos Querier",
+  "appliesTo": "kubevirt.thanos.host && kubevirt.thanos.token",
+  "activeDiscovery": {
+    "groupExpr": "auto.vmi.namespace",
+    "deleteInactiveInstances": true,
+    "groupMethod": "ilp",
+    "discoveryMethod": "ad_script",
+    "autoDeleteInstances": true,
+    "disableDiscoveredInstances": false,
+    "filters": [],
+    "params": {
+      "type": "groovy",
+      "content": "// KubeVirt VMI Active Discovery for Storage\nimport groovy.json.JsonSlurper\nimport javax.net.ssl.*\nimport java.security.cert.X509Certificate\n\ndef host = hostProps.get(\"kubevirt.thanos.host\")\ndef token = hostProps.get(\"kubevirt.thanos.token\")\ndef port = hostProps.get(\"kubevirt.thanos.port\") ?: \"443\"\ndef useSsl = (hostProps.get(\"kubevirt.thanos.ssl\") ?: \"true\").toLowerCase() == \"true\"\n\nif (!host || !token) { return 1 }\n\ndef trustAllCerts = [\n    checkClientTrusted: { chain, authType -> },\n    checkServerTrusted: { chain, authType -> },\n    getAcceptedIssuers: { null }\n] as X509TrustManager\n\ndef sc = SSLContext.getInstance(\"TLS\")\nsc.init(null, [trustAllCerts] as TrustManager[], null)\nHttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory())\nHttpsURLConnection.setDefaultHostnameVerifier({ hostname, session -> true } as HostnameVerifier)\n\n\ndef proto = useSsl ? \"https\" : \"http\"\ndef baseUrl = \"${proto}://${host}:${port}\"\n\ntry {\n    def query = 'kubevirt_vmi_info'\n    def encoded = java.net.URLEncoder.encode(query, \"UTF-8\")\n    def url = new URL(\"${baseUrl}/api/v1/query?query=${encoded}\")\n    def conn = url.openConnection()\n    conn.setRequestProperty(\"Authorization\", \"Bearer ${token}\")\n    conn.setConnectTimeout(30000)\n    conn.setReadTimeout(30000)\n    \n    if (conn.responseCode == 200) {\n        def response = conn.inputStream.text\n        def json = new JsonSlurper().parseText(response)\n        \n        if (json.status == \"success\" && json.data?.result) {\n            json.data.result.each { result ->\n                def labels = result.metric\n                def name = labels.name ?: \"unknown\"\n                def namespace = labels.namespace ?: \"default\"\n                def node = labels.node ?: \"unknown\"\n                \n                println \"${name}##${name}##VMI ${name} Storage metrics####auto.vmi.name=${name}&auto.vmi.namespace=${namespace}&auto.vmi.node=${node}\"\n            }\n        }\n    }\n} catch (Exception e) { return 1 }\nreturn 0\n"
+    },
+    "discoveryInterval": "15m",
+    "enabled": true,
+    "showDeletedInstanceDays": 0
   },
-  "graphs": [
-    {
-      "name": "Storage Throughput",
-      "title": "Storage Throughput (bytes/sec)",
-      "dataPoints": [
-        {"name": "read_bytes", "aggregation": "avg"},
-        {"name": "write_bytes", "aggregation": "avg"}
-      ]
-    },
-    {
-      "name": "Storage IOPS",
-      "title": "Storage IOPS (operations/sec)",
-      "dataPoints": [
-        {"name": "read_iops", "aggregation": "avg"},
-        {"name": "write_iops", "aggregation": "avg"}
-      ]
-    },
-    {
-      "name": "Storage Latency",
-      "title": "Storage Latency (ms)",
-      "dataPoints": [
-        {"name": "read_latency_ms", "aggregation": "avg"},
-        {"name": "write_latency_ms", "aggregation": "avg"},
-        {"name": "flush_latency_ms", "aggregation": "avg"}
-      ]
-    }
-  ]
+  "collectionAttrs": {
+    "type": "groovy",
+    "content": "// KubeVirt VMI Storage Metrics\nimport groovy.json.JsonSlurper\nimport javax.net.ssl.*\nimport java.security.cert.X509Certificate\n\ndef host = hostProps.get(\"kubevirt.thanos.host\")\ndef token = hostProps.get(\"kubevirt.thanos.token\")\ndef vmiName = instanceProps.get(\"wildvalue\")\n\nif (!host || !token || !vmiName) {\n    println(\"read_bytes:0\")\n    println(\"write_bytes:0\")\n    println(\"read_iops:0\")\n    println(\"write_iops:0\")\n    println(\"read_latency_ms:0\")\n    println(\"write_latency_ms:0\")\n    println(\"flush_requests:0\")\n    println(\"flush_latency_ms:0\")\n    return 0\n}\n\ndef trustAllCerts = [\n    checkClientTrusted: { chain, authType -> },\n    checkServerTrusted: { chain, authType -> },\n    getAcceptedIssuers: { null }\n] as X509TrustManager\n\ndef sc = SSLContext.getInstance(\"TLS\")\nsc.init(null, [trustAllCerts] as TrustManager[], null)\nHttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory())\nHttpsURLConnection.setDefaultHostnameVerifier({ hostname, session -> true } as HostnameVerifier)\n\ndef baseUrl = \"https://${host}:443\"\n\ndef readBytes = 0\ndef writeBytes = 0\ndef readIops = 0\ndef writeIops = 0\ndef readTimes = 0\ndef writeTimes = 0\ndef flushReqs = 0\ndef flushTimes = 0\n\ntry {\n    def query = \"sum(rate(kubevirt_vmi_storage_read_traffic_bytes_total{name=\\\"${vmiName}\\\"}[5m]))\"\n    def encoded = java.net.URLEncoder.encode(query, \"UTF-8\")\n    def url = new URL(\"${baseUrl}/api/v1/query?query=${encoded}\")\n    def conn = url.openConnection()\n    conn.setRequestProperty(\"Authorization\", \"Bearer ${token}\")\n    conn.setConnectTimeout(30000)\n    conn.setReadTimeout(30000)\n    if (conn.responseCode == 200) {\n        def response = conn.inputStream.text\n        def json = new JsonSlurper().parseText(response)\n        if (json.status == \"success\" && json.data?.result?.size() > 0) {\n            readBytes = json.data.result[0].value[1] as Double\n        }\n    }\n} catch (Exception e) {}\n\ntry {\n    def query = \"sum(rate(kubevirt_vmi_storage_write_traffic_bytes_total{name=\\\"${vmiName}\\\"}[5m]))\"\n    def encoded = java.net.URLEncoder.encode(query, \"UTF-8\")\n    def url = new URL(\"${baseUrl}/api/v1/query?query=${encoded}\")\n    def conn = url.openConnection()\n    conn.setRequestProperty(\"Authorization\", \"Bearer ${token}\")\n    conn.setConnectTimeout(30000)\n    conn.setReadTimeout(30000)\n    if (conn.responseCode == 200) {\n        def response = conn.inputStream.text\n        def json = new JsonSlurper().parseText(response)\n        if (json.status == \"success\" && json.data?.result?.size() > 0) {\n            writeBytes = json.data.result[0].value[1] as Double\n        }\n    }\n} catch (Exception e) {}\n\ntry {\n    def query = \"sum(rate(kubevirt_vmi_storage_iops_read_total{name=\\\"${vmiName}\\\"}[5m]))\"\n    def encoded = java.net.URLEncoder.encode(query, \"UTF-8\")\n    def url = new URL(\"${baseUrl}/api/v1/query?query=${encoded}\")\n    def conn = url.openConnection()\n    conn.setRequestProperty(\"Authorization\", \"Bearer ${token}\")\n    conn.setConnectTimeout(30000)\n    conn.setReadTimeout(30000)\n    if (conn.responseCode == 200) {\n        def response = conn.inputStream.text\n        def json = new JsonSlurper().parseText(response)\n        if (json.status == \"success\" && json.data?.result?.size() > 0) {\n            readIops = json.data.result[0].value[1] as Double\n        }\n    }\n} catch (Exception e) {}\n\ntry {\n    def query = \"sum(rate(kubevirt_vmi_storage_iops_write_total{name=\\\"${vmiName}\\\"}[5m]))\"\n    def encoded = java.net.URLEncoder.encode(query, \"UTF-8\")\n    def url = new URL(\"${baseUrl}/api/v1/query?query=${encoded}\")\n    def conn = url.openConnection()\n    conn.setRequestProperty(\"Authorization\", \"Bearer ${token}\")\n    conn.setConnectTimeout(30000)\n    conn.setReadTimeout(30000)\n    if (conn.responseCode == 200) {\n        def response = conn.inputStream.text\n        def json = new JsonSlurper().parseText(response)\n        if (json.status == \"success\" && json.data?.result?.size() > 0) {\n            writeIops = json.data.result[0].value[1] as Double\n        }\n    }\n} catch (Exception e) {}\n\ntry {\n    def query = \"sum(rate(kubevirt_vmi_storage_read_times_seconds_total{name=\\\"${vmiName}\\\"}[5m]))\"\n    def encoded = java.net.URLEncoder.encode(query, \"UTF-8\")\n    def url = new URL(\"${baseUrl}/api/v1/query?query=${encoded}\")\n    def conn = url.openConnection()\n    conn.setRequestProperty(\"Authorization\", \"Bearer ${token}\")\n    conn.setConnectTimeout(30000)\n    conn.setReadTimeout(30000)\n    if (conn.responseCode == 200) {\n        def response = conn.inputStream.text\n        def json = new JsonSlurper().parseText(response)\n        if (json.status == \"success\" && json.data?.result?.size() > 0) {\n            readTimes = json.data.result[0].value[1] as Double\n        }\n    }\n} catch (Exception e) {}\n\ntry {\n    def query = \"sum(rate(kubevirt_vmi_storage_write_times_seconds_total{name=\\\"${vmiName}\\\"}[5m]))\"\n    def encoded = java.net.URLEncoder.encode(query, \"UTF-8\")\n    def url = new URL(\"${baseUrl}/api/v1/query?query=${encoded}\")\n    def conn = url.openConnection()\n    conn.setRequestProperty(\"Authorization\", \"Bearer ${token}\")\n    conn.setConnectTimeout(30000)\n    conn.setReadTimeout(30000)\n    if (conn.responseCode == 200) {\n        def response = conn.inputStream.text\n        def json = new JsonSlurper().parseText(response)\n        if (json.status == \"success\" && json.data?.result?.size() > 0) {\n            writeTimes = json.data.result[0].value[1] as Double\n        }\n    }\n} catch (Exception e) {}\n\ntry {\n    def query = \"sum(rate(kubevirt_vmi_storage_flush_requests_total{name=\\\"${vmiName}\\\"}[5m]))\"\n    def encoded = java.net.URLEncoder.encode(query, \"UTF-8\")\n    def url = new URL(\"${baseUrl}/api/v1/query?query=${encoded}\")\n    def conn = url.openConnection()\n    conn.setRequestProperty(\"Authorization\", \"Bearer ${token}\")\n    conn.setConnectTimeout(30000)\n    conn.setReadTimeout(30000)\n    if (conn.responseCode == 200) {\n        def response = conn.inputStream.text\n        def json = new JsonSlurper().parseText(response)\n        if (json.status == \"success\" && json.data?.result?.size() > 0) {\n            flushReqs = json.data.result[0].value[1] as Double\n        }\n    }\n} catch (Exception e) {}\n\ntry {\n    def query = \"sum(rate(kubevirt_vmi_storage_flush_times_seconds_total{name=\\\"${vmiName}\\\"}[5m]))\"\n    def encoded = java.net.URLEncoder.encode(query, \"UTF-8\")\n    def url = new URL(\"${baseUrl}/api/v1/query?query=${encoded}\")\n    def conn = url.openConnection()\n    conn.setRequestProperty(\"Authorization\", \"Bearer ${token}\")\n    conn.setConnectTimeout(30000)\n    conn.setReadTimeout(30000)\n    if (conn.responseCode == 200) {\n        def response = conn.inputStream.text\n        def json = new JsonSlurper().parseText(response)\n        if (json.status == \"success\" && json.data?.result?.size() > 0) {\n            flushTimes = json.data.result[0].value[1] as Double\n        }\n    }\n} catch (Exception e) {}\n\ndef readLatMs = (readIops > 0) ? ((readTimes / readIops) * 1000) : 0\ndef writeLatMs = (writeIops > 0) ? ((writeTimes / writeIops) * 1000) : 0\ndef flushLatMs = (flushReqs > 0) ? ((flushTimes / flushReqs) * 1000) : 0\n\nprintln(\"read_bytes:\" + readBytes)\nprintln(\"write_bytes:\" + writeBytes)\nprintln(\"read_iops:\" + readIops)\nprintln(\"write_iops:\" + writeIops)\nprintln(\"read_latency_ms:\" + readLatMs)\nprintln(\"write_latency_ms:\" + writeLatMs)\nprintln(\"flush_requests:\" + flushReqs)\nprintln(\"flush_latency_ms:\" + flushLatMs)\n\nreturn 0"
+  },
+  "type": 0,
+  "technicalNotes": "",
+  "useWildValueAsUniqueIdentifier": false,
+  "version": 1768620817,
+  "registryMetadata": {
+    "currentUuid": "z9FUbuokSyWKAAePC4_d2A",
+    "originalUuid": "z9FUbuokSyWKAAePC4_d2A",
+    "locatorId": "",
+    "authorCompanyUuid": "56c5c6a6-58e4-4b5c-9d7e-629ce3fe75cf",
+    "registryVersion": "1.0.0",
+    "checksum": "fe5bf97ae29f419b2f5026230bb2ddf8",
+    "namespace": "",
+    "registryId": "",
+    "isChangedFromOrigin": false,
+    "status": ""
+  },
+  "multiInstance": true,
+  "name": "KubeVirt_VMI_Storage",
+  "collectionInterval": "1m",
+  "dataSourceType": 1,
+  "group": "KubeVirt"
 }

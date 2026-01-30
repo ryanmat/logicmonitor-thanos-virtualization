@@ -1,51 +1,68 @@
 {
-  "name": "KubeVirt_VMI_Discovery",
-  "displayName": "KubeVirt VMI Discovery",
-  "description": "Discovers running KubeVirt Virtual Machine Instances via Thanos Querier",
-  "group": "KubeVirt",
-  "tags": "kubevirt,openshift,virtualization",
-  "appliesTo": "kubevirt.thanos.host && kubevirt.thanos.token",
-  "technology": "Discovers KubeVirt VMIs by querying Thanos/Prometheus metrics",
-  "collectMethod": "script",
-  "collectInterval": 300,
-  "multiInstance": true,
-  "hasMultiInstances": true,
-  "useWildValueAsUniqueIdentifier": true,
-  "activeDiscovery": {
-    "method": "ad_script",
-    "schedule": 900,
-    "deleteInactiveInstances": true,
-    "disableInstance": false,
-    "script": {
-      "type": "embeddedGroovyScript",
-      "content": "// Description: Active Discovery script for KubeVirt VMI instances.\n// Description: Queries Thanos for running VMs and outputs LogicMonitor discovery format.\n// v4\n\nimport groovy.json.JsonSlurper\n\n// Embedded ThanosClient class\nclass ThanosClient {\n    private String host\n    private String token\n    private int port\n    private boolean ssl\n    private String baseUrl\n    private boolean debug\n\n    ThanosClient(Map hostProps) {\n        this.host = hostProps.get(\"kubevirt.thanos.host\")\n        this.token = hostProps.get(\"kubevirt.thanos.token\")\n        this.port = (hostProps.get(\"kubevirt.thanos.port\") ?: \"443\") as int\n        this.ssl = (hostProps.get(\"kubevirt.thanos.ssl\") ?: \"true\").toLowerCase() == \"true\"\n        this.debug = (hostProps.get(\"kubevirt.thanos.debug\") ?: \"false\").toLowerCase() == \"true\"\n\n        if (!this.host) throw new IllegalArgumentException(\"kubevirt.thanos.host is required\")\n        if (!this.token) throw new IllegalArgumentException(\"kubevirt.thanos.token is required\")\n\n        def protocol = ssl ? \"https\" : \"http\"\n        def portSuffix = ((ssl && port == 443) || (!ssl && port == 80)) ? \"\" : \":${port}\"\n        this.baseUrl = \"${protocol}://${host}${portSuffix}\"\n    }\n\n    def query(String promql) {\n        def encodedQuery = java.net.URLEncoder.encode(promql, \"UTF-8\")\n        def url = \"${baseUrl}/api/v1/query?query=${encodedQuery}\"\n        if (debug) println \"DEBUG: ${url}\"\n\n        try {\n            def response = executeHttpGet(url)\n            def json = new JsonSlurper().parseText(response)\n            if (json.status != \"success\") {\n                System.err.println \"ERROR: ${json.error ?: 'Unknown error'}\"\n                return null\n            }\n            return json\n        } catch (Exception e) {\n            System.err.println \"ERROR: ${e.message}\"\n            return null\n        }\n    }\n\n    List queryWithLabels(String promql) {\n        def json = query(promql)\n        if (!json?.data?.result) return []\n        return json.data.result.collect { r -> [r.metric ?: [:], r.value ? r.value[1] : null] }\n    }\n\n    private String executeHttpGet(String url) {\n        try {\n            def httpClass = Class.forName(\"com.santaba.agent.groovyapi.http.HTTP\")\n            def http = httpClass.newInstance()\n            http.open(url)\n            http.setHeader(\"Authorization\", \"Bearer ${token}\")\n            def response = http.get()\n            http.close()\n            return response\n        } catch (ClassNotFoundException e) {\n            return executeStandardHttpGet(url)\n        }\n    }\n\n    private String executeStandardHttpGet(String url) {\n        def conn = new URL(url).openConnection() as HttpURLConnection\n        conn.setRequestMethod(\"GET\")\n        conn.setRequestProperty(\"Authorization\", \"Bearer ${token}\")\n        conn.setConnectTimeout(30000)\n        conn.setReadTimeout(60000)\n        if (ssl) {\n            try {\n                def sc = javax.net.ssl.SSLContext.getInstance(\"TLS\")\n                sc.init(null, [new javax.net.ssl.X509TrustManager() {\n                    void checkClientTrusted(java.security.cert.X509Certificate[] c, String a) {}\n                    void checkServerTrusted(java.security.cert.X509Certificate[] c, String a) {}\n                    java.security.cert.X509Certificate[] getAcceptedIssuers() { null }\n                }] as javax.net.ssl.TrustManager[], new java.security.SecureRandom())\n                conn.setSSLSocketFactory(sc.getSocketFactory())\n                conn.setHostnameVerifier({ h, s -> true })\n            } catch (Exception e) {}\n        }\n        if (conn.getResponseCode() != 200) throw new RuntimeException(\"HTTP ${conn.getResponseCode()}\")\n        return conn.getInputStream().text\n    }\n}\n\n// Discovery Logic\ntry {\n    def client = new ThanosClient(hostProps)\n    def results = client.queryWithLabels('kubevirt_vmi_info{phase=\"running\"}')\n\n    if (!results) {\n        System.err.println \"INFO: No running VMIs found\"\n        return 0\n    }\n\n    results.each { labels, value ->\n        def ns = labels.get(\"namespace\")\n        def name = labels.get(\"name\")\n        if (!ns || !name) return\n\n        def node = labels.get(\"node\") ?: \"unknown\"\n        def phase = labels.get(\"phase\") ?: \"running\"\n        def instType = labels.get(\"instance_type\") ?: \"\"\n        def guestOs = labels.get(\"guest_os_name\") ?: \"\"\n        def pref = labels.get(\"preference\") ?: \"\"\n\n        def wildvalue = \"${ns}/${name}\"\n        def wildalias = name\n        def desc = \"VM ${name} in namespace ${ns}\" + (guestOs ? \" (${guestOs})\" : \"\")\n\n        def props = [\n            \"auto.kubevirt.namespace=${ns}\",\n            \"auto.kubevirt.vmi_name=${name}\",\n            \"auto.kubevirt.node=${node}\",\n            \"auto.kubevirt.phase=${phase}\"\n        ]\n        if (instType) props << \"auto.kubevirt.instance_type=${instType}\"\n        if (guestOs) props << \"auto.kubevirt.guest_os=${guestOs}\"\n        if (pref) props << \"auto.kubevirt.preference=${pref}\"\n\n        println \"${wildvalue}##${wildalias}##${desc}####${props.join('&')}\"\n    }\n    return 0\n} catch (Exception e) {\n    System.err.println \"ERROR: ${e.message}\"\n    return 1\n}"
-    }
-  },
-  "dataPoints": [
+  "collectionMethod": "script",
+  "datapoints": [
     {
-      "name": "Status",
-      "description": "VMI running status (1=running, 0=not running)",
+      "max": "4",
+      "triggerInterval": 5,
+      "dataType": 7,
+      "maxDigits": 4,
+      "description": "VMI Status (1=running, 2=scheduling, 3=pending, 4=failed, 0=unknown)",
+      "interpretMethod": "namevalue",
+      "threshold": "!= 1",
+      "interpretExpr": "status",
       "type": "gauge",
-      "alertTransitionInterval": 3,
-      "alertClearTransitionInterval": 1,
-      "alertExpr": "< 1",
-      "alertExprNote": "Alert when VM is no longer running"
+      "clearInterval": 0,
+      "originId": "_TuvIWGYSNKUxY6PAZZSLA",
+      "useValue": "output",
+      "min": "0",
+      "name": "status",
+      "noData": "Do not trigger an alert",
+      "statusDisplayNames": []
     }
   ],
-  "collectScript": {
-    "type": "embeddedGroovyScript",
-    "content": "// Description: Collection script for KubeVirt VMI status.\n// Description: Outputs 1 if VMI is running, 0 otherwise.\n// v4\n\nimport groovy.json.JsonSlurper\n\nclass ThanosClient {\n    private String host, token, baseUrl\n    private int port\n    private boolean ssl, debug\n\n    ThanosClient(Map p) {\n        this.host = p.get(\"kubevirt.thanos.host\")\n        this.token = p.get(\"kubevirt.thanos.token\")\n        this.port = (p.get(\"kubevirt.thanos.port\") ?: \"443\") as int\n        this.ssl = (p.get(\"kubevirt.thanos.ssl\") ?: \"true\").toLowerCase() == \"true\"\n        this.debug = (p.get(\"kubevirt.thanos.debug\") ?: \"false\").toLowerCase() == \"true\"\n        if (!host || !token) throw new IllegalArgumentException(\"Missing thanos config\")\n        def proto = ssl ? \"https\" : \"http\"\n        def ps = ((ssl && port == 443) || (!ssl && port == 80)) ? \"\" : \":${port}\"\n        this.baseUrl = \"${proto}://${host}${ps}\"\n    }\n\n    Map queryGroupedByKey(String promql, List<String> keys, String sep = \"/\") {\n        def results = [:]\n        def json = query(promql)\n        if (!json?.data?.result) return results\n        json.data.result.each { r ->\n            def labels = r.metric ?: [:]\n            def keyParts = keys.collect { labels[it] ?: \"\" }\n            if (keyParts.every { it }) results[keyParts.join(sep)] = r.value ? r.value[1] : null\n        }\n        return results\n    }\n\n    def query(String promql) {\n        def url = \"${baseUrl}/api/v1/query?query=${java.net.URLEncoder.encode(promql, 'UTF-8')}\"\n        try {\n            def resp = executeHttpGet(url)\n            def json = new JsonSlurper().parseText(resp)\n            return json.status == \"success\" ? json : null\n        } catch (Exception e) { return null }\n    }\n\n    private String executeHttpGet(String url) {\n        try {\n            def http = Class.forName(\"com.santaba.agent.groovyapi.http.HTTP\").newInstance()\n            http.open(url); http.setHeader(\"Authorization\", \"Bearer ${token}\")\n            def r = http.get(); http.close(); return r\n        } catch (ClassNotFoundException e) {\n            def c = new URL(url).openConnection() as HttpURLConnection\n            c.setRequestMethod(\"GET\"); c.setRequestProperty(\"Authorization\", \"Bearer ${token}\")\n            c.setConnectTimeout(30000); c.setReadTimeout(60000)\n            if (ssl) { try {\n                def sc = javax.net.ssl.SSLContext.getInstance(\"TLS\")\n                sc.init(null, [new javax.net.ssl.X509TrustManager() {\n                    void checkClientTrusted(java.security.cert.X509Certificate[] x, String a) {}\n                    void checkServerTrusted(java.security.cert.X509Certificate[] x, String a) {}\n                    java.security.cert.X509Certificate[] getAcceptedIssuers() { null }\n                }] as javax.net.ssl.TrustManager[], new java.security.SecureRandom())\n                c.setSSLSocketFactory(sc.getSocketFactory()); c.setHostnameVerifier({ h, s -> true })\n            } catch (Exception ex) {} }\n            if (c.getResponseCode() != 200) throw new RuntimeException(\"HTTP ${c.getResponseCode()}\")\n            return c.getInputStream().text\n        }\n    }\n}\n\ntry {\n    def client = new ThanosClient(hostProps)\n    def wildvalue = instanceProps.get(\"wildvalue\")\n    if (!wildvalue) { println \"Status: 0\"; return 0 }\n\n    def parts = wildvalue.split(\"/\")\n    if (parts.length < 2) { println \"Status: 0\"; return 0 }\n    def ns = parts[0]\n    def name = parts[1]\n\n    def running = client.queryGroupedByKey('kubevirt_vmi_info{phase=\"running\"}', [\"namespace\", \"name\"])\n    def status = running.containsKey(wildvalue) ? 1 : 0\n    println \"Status: ${status}\"\n    return 0\n} catch (Exception e) {\n    System.err.println \"ERROR: ${e.message}\"\n    return 1\n}"
+  "searchKeywords": "",
+  "displayedAs": "KubeVirt VMI Discovery",
+  "description": "Discovers and monitors KubeVirt Virtual Machine Instances (VMIs) via Thanos Querier",
+  "appliesTo": "kubevirt.thanos.host && kubevirt.thanos.token",
+  "activeDiscovery": {
+    "groupExpr": "auto.vmi.namespace",
+    "deleteInactiveInstances": true,
+    "groupMethod": "ilp",
+    "discoveryMethod": "ad_script",
+    "autoDeleteInstances": true,
+    "disableDiscoveredInstances": false,
+    "filters": [],
+    "params": {
+      "type": "groovy",
+      "content": "// KubeVirt VMI Active Discovery\nimport groovy.json.JsonSlurper\nimport javax.net.ssl.*\nimport java.security.cert.X509Certificate\n\ndef host = hostProps.get(\"kubevirt.thanos.host\")\ndef token = hostProps.get(\"kubevirt.thanos.token\")\ndef port = hostProps.get(\"kubevirt.thanos.port\") ?: \"443\"\ndef useSsl = (hostProps.get(\"kubevirt.thanos.ssl\") ?: \"true\").toLowerCase() == \"true\"\n\nif (!host || !token) {\n    println \"kubevirt.thanos.host and kubevirt.thanos.token properties are required\"\n    return 1\n}\n\ndef trustAllCerts = [\n    checkClientTrusted: { chain, authType -> },\n    checkServerTrusted: { chain, authType -> },\n    getAcceptedIssuers: { null }\n] as X509TrustManager\n\ndef sc = SSLContext.getInstance(\"TLS\")\nsc.init(null, [trustAllCerts] as TrustManager[], null)\nHttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory())\nHttpsURLConnection.setDefaultHostnameVerifier({ hostname, session -> true } as HostnameVerifier)\n\n\ndef proto = useSsl ? \"https\" : \"http\"\ndef baseUrl = \"${proto}://${host}:${port}\"\n\ntry {\n    def query = 'kubevirt_vmi_info'\n    def encoded = java.net.URLEncoder.encode(query, \"UTF-8\")\n    def url = new URL(\"${baseUrl}/api/v1/query?query=${encoded}\")\n    def conn = url.openConnection()\n    conn.setRequestProperty(\"Authorization\", \"Bearer ${token}\")\n    conn.setConnectTimeout(30000)\n    conn.setReadTimeout(30000)\n    \n    if (conn.responseCode == 200) {\n        def response = conn.inputStream.text\n        def json = new JsonSlurper().parseText(response)\n        \n        if (json.status == \"success\" && json.data?.result) {\n            json.data.result.each { result ->\n                def labels = result.metric\n                def name = labels.name ?: \"unknown\"\n                def namespace = labels.namespace ?: \"default\"\n                def node = labels.node ?: \"unknown\"\n                def phase = labels.phase ?: \"unknown\"\n                \n                // Instance ID is just the name (like OpenMetrics instance label)\n                def instanceId = name\n                def displayName = name\n                def description = \"VMI ${name} in namespace ${namespace} on node ${node}\"\n                \n                // Properties for grouping - namespace used for ILP grouping\n                println \"${instanceId}##${displayName}##${description}####auto.vmi.name=${name}&auto.vmi.namespace=${namespace}&auto.vmi.node=${node}&auto.vmi.phase=${phase}\"\n            }\n        }\n    }\n} catch (Exception e) {\n    println \"Error: ${e.message}\"\n    return 1\n}\n\nreturn 0\n"
+    },
+    "discoveryInterval": "15m",
+    "enabled": true,
+    "showDeletedInstanceDays": 0
   },
-  "graphs": [
-    {
-      "name": "VMI Status",
-      "title": "VMI Running Status",
-      "dataPoints": [
-        {
-          "name": "Status",
-          "aggregation": "min"
-        }
-      ]
-    }
-  ]
+  "collectionAttrs": {
+    "type": "groovy",
+    "content": "// KubeVirt VMI Status\nimport groovy.json.JsonSlurper\nimport javax.net.ssl.*\nimport java.security.cert.X509Certificate\n\ndef host = hostProps.get(\"kubevirt.thanos.host\")\ndef token = hostProps.get(\"kubevirt.thanos.token\")\ndef vmiName = instanceProps.get(\"wildvalue\")\n\nif (!host || !token || !vmiName) {\n    println(\"status:0\")\n    return 0\n}\n\ndef trustAllCerts = [\n    checkClientTrusted: { chain, authType -> },\n    checkServerTrusted: { chain, authType -> },\n    getAcceptedIssuers: { null }\n] as X509TrustManager\n\ndef sc = SSLContext.getInstance(\"TLS\")\nsc.init(null, [trustAllCerts] as TrustManager[], null)\nHttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory())\nHttpsURLConnection.setDefaultHostnameVerifier({ hostname, session -> true } as HostnameVerifier)\n\ntry {\n    def query = \"kubevirt_vmi_info{name=\\\"${vmiName}\\\"}\"\n    def encoded = java.net.URLEncoder.encode(query, \"UTF-8\")\n    def url = new URL(\"https://${host}:443/api/v1/query?query=${encoded}\")\n    def conn = url.openConnection()\n    conn.setRequestProperty(\"Authorization\", \"Bearer ${token}\")\n    conn.setConnectTimeout(30000)\n    conn.setReadTimeout(30000)\n    \n    if (conn.responseCode == 200) {\n        def response = conn.inputStream.text\n        def json = new JsonSlurper().parseText(response)\n        if (json.status == \"success\" && json.data?.result?.size() > 0) {\n            def phase = json.data.result[0].metric?.phase ?: \"unknown\"\n            def statusVal = 0\n            switch(phase.toLowerCase()) {\n                case \"running\": statusVal = 1; break\n                case \"scheduling\": statusVal = 2; break\n                case \"pending\": statusVal = 3; break\n                case \"failed\": statusVal = 4; break\n            }\n            println(\"status:\" + statusVal)\n            return 0\n        }\n    }\n} catch (Exception e) {}\n\nprintln(\"status:0\")\nreturn 0"
+  },
+  "type": 0,
+  "technicalNotes": "",
+  "useWildValueAsUniqueIdentifier": false,
+  "version": 1768858758,
+  "registryMetadata": {
+    "currentUuid": "qeArCvidQ1OhOdCpNzdVNg",
+    "originalUuid": "qeArCvidQ1OhOdCpNzdVNg",
+    "locatorId": "",
+    "authorCompanyUuid": "56c5c6a6-58e4-4b5c-9d7e-629ce3fe75cf",
+    "registryVersion": "1.0.0",
+    "checksum": "136882c9b4a0367b0d430f1ef0a4ca48",
+    "namespace": "",
+    "registryId": "",
+    "isChangedFromOrigin": false,
+    "status": ""
+  },
+  "multiInstance": true,
+  "name": "KubeVirt_VMI_Discovery",
+  "collectionInterval": "1m",
+  "dataSourceType": 1,
+  "group": "KubeVirt"
 }
