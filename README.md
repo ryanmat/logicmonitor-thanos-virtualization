@@ -76,12 +76,12 @@ This project provides a suite of LogicMonitor DataSources to monitor KubeVirt vi
 
 | DataSource | ID | Instances | Collection Interval | Description |
 |------------|-----|-----------|---------------------|-------------|
-| KubeVirt_VMI_Discovery | 11442178 | Per VM | 5 min | Discovers VMs, tracks running state |
+| KubeVirt_VMI_Discovery | 11442178 | Per VM | 1 min | Discovers VMs, tracks running state |
 | KubeVirt_VMI_CPU | 11442179 | Per VM | 1 min | CPU usage, system/user time, vCPU metrics |
 | KubeVirt_VMI_Memory | 11442180 | Per VM | 1 min | Memory usage, available, cached, swap |
 | KubeVirt_VMI_Network | 11442181 | Per VM | 1 min | Network throughput, packets, errors |
 | KubeVirt_VMI_Storage | 11442182 | Per VM | 1 min | Disk throughput, IOPS, latency |
-| KubeVirt_Cluster_Overview_v2 | 11442177 | Cluster | 5 min | Cluster-wide VM counts and health |
+| KubeVirt_Cluster_Overview_v2 | 11442177 | Cluster | 1 min | Cluster-wide VM counts and health |
 
 All VMI DataSources use **Instance Level Property (ILP) grouping** by namespace, so VMs are automatically organized by their Kubernetes namespace in LogicMonitor.
 
