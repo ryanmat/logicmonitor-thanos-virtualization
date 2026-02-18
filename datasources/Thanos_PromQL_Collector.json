@@ -1,0 +1,85 @@
+{
+  "collectionMethod": "script",
+  "datapoints": [
+    {
+      "max": "",
+      "triggerInterval": 5,
+      "dataType": 7,
+      "maxDigits": 4,
+      "description": "Query execution status: 0=success, 1=empty/non-numeric result, 2=connection/auth error",
+      "interpretMethod": "namevalue",
+      "threshold": "> 1",
+      "interpretExpr": "query_status",
+      "type": "gauge",
+      "clearInterval": 0,
+      "originId": "mpW-4dV2RpSZRr3M64Zgbg",
+      "useValue": "output",
+      "min": "",
+      "name": "query_status",
+      "noData": "Do not trigger an alert",
+      "statusDisplayNames": []
+    },
+    {
+      "max": "",
+      "triggerInterval": 5,
+      "dataType": 7,
+      "maxDigits": 4,
+      "description": "Numeric result of the PromQL query",
+      "interpretMethod": "namevalue",
+      "interpretExpr": "value",
+      "type": "gauge",
+      "clearInterval": 0,
+      "originId": "VRZvZ4d0QounDpGMAzA8kQ",
+      "useValue": "output",
+      "min": "",
+      "name": "value",
+      "noData": "Do not trigger an alert",
+      "statusDisplayNames": []
+    }
+  ],
+  "searchKeywords": "promql,prometheus,thanos,collector",
+  "displayedAs": "Thanos PromQL Collector",
+  "description": "Configurable PromQL DataSource that queries any Thanos endpoint. Device properties define named PromQL queries; Active Discovery creates an instance per query; Collection executes each query and stores the result.",
+  "appliesTo": "thanos.host && thanos.pass",
+  "activeDiscovery": {
+    "groupExpr": "auto.query.group",
+    "deleteInactiveInstances": false,
+    "groupMethod": "ilp",
+    "discoveryMethod": "ad_script",
+    "autoDeleteInstances": true,
+    "disableDiscoveredInstances": false,
+    "filters": [],
+    "params": {
+      "type": "groovy",
+      "content": "// Description: Discovers PromQL query instances from device properties (thanos.query.N.*).\n// Description: Each property set becomes an LM instance grouped by auto.query.group.\n\n// Iterate through numbered query properties (1-99)\nfor (int i = 1; i <= 99; i++) {\n    def name = hostProps.get(\"thanos.query.${i}.name\")\n    if (!name) break\n\n    def promql = hostProps.get(\"thanos.query.${i}.promql\")\n    def group = hostProps.get(\"thanos.query.${i}.group\") ?: \"default\"\n\n    if (promql) {\n        // URL-encode the promql value so that characters like = \" { } & in PromQL\n        // label filters do not break the key=value&key=value property format.\n        // The collection script URL-decodes it before use.\n        def encodedPromql = java.net.URLEncoder.encode(promql, \"UTF-8\")\n        println \"${name}##${name}##PromQL: ${promql}####auto.query.promql=${encodedPromql}&auto.query.group=${group}\"\n    }\n}\n\nreturn 0\n"
+    },
+    "discoveryInterval": "15m",
+    "enabled": true,
+    "showDeletedInstanceDays": 0
+  },
+  "collectionAttrs": {
+    "type": "groovy",
+    "content": "// Description: Executes a PromQL query against a Thanos endpoint and returns the numeric result.\n// Description: Each instance runs one query defined by device properties (thanos.query.N.*).\nimport groovy.json.JsonSlurper\nimport javax.net.ssl.*\nimport java.security.cert.X509Certificate\n\ndef host = hostProps.get(\"thanos.host\")\ndef token = hostProps.get(\"thanos.pass\")\ndef port = hostProps.get(\"thanos.port\") ?: \"443\"\ndef useSsl = (hostProps.get(\"thanos.ssl\") ?: \"true\").toLowerCase() == \"true\"\n\n// The PromQL query for this instance is stored as a URL-encoded instance-level property.\n// AD script encodes it to avoid = and & in PromQL breaking the property format.\ndef promqlRaw = instanceProps.get(\"auto.query.promql\")\ndef promql = promqlRaw ? java.net.URLDecoder.decode(promqlRaw, \"UTF-8\") : null\n\nif (!host || !token || !promql) {\n    println(\"value:NaN\")\n    println(\"query_status:2\")\n    return 0\n}\n\n// Trust all certs (self-signed common in OpenShift/internal clusters)\ndef trustAllCerts = [\n    checkClientTrusted: { chain, authType -> },\n    checkServerTrusted: { chain, authType -> },\n    getAcceptedIssuers: { null }\n] as X509TrustManager\n\ndef sc = SSLContext.getInstance(\"TLS\")\nsc.init(null, [trustAllCerts] as TrustManager[], null)\nHttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory())\nHttpsURLConnection.setDefaultHostnameVerifier({ hostname, session -> true } as HostnameVerifier)\n\ndef proto = useSsl ? \"https\" : \"http\"\ndef baseUrl = \"${proto}://${host}:${port}\"\n\ntry {\n    def encoded = java.net.URLEncoder.encode(promql, \"UTF-8\")\n    def url = new URL(\"${baseUrl}/api/v1/query?query=${encoded}\")\n    def conn = url.openConnection()\n    conn.setRequestProperty(\"Authorization\", \"Bearer ${token}\")\n    conn.setRequestProperty(\"Accept\", \"application/json\")\n    conn.setConnectTimeout(30000)\n    conn.setReadTimeout(30000)\n\n    if (conn.responseCode == 200) {\n        def response = conn.inputStream.text\n        def json = new JsonSlurper().parseText(response)\n\n        if (json.status == \"success\" && json.data?.result?.size() > 0) {\n            // For instant queries, result[0].value[1] holds the scalar value\n            def val = json.data.result[0].value[1]\n            if (val != null && val.toString().isNumber()) {\n                println(\"value:${val}\")\n                println(\"query_status:0\")\n            } else {\n                // Query returned non-numeric (e.g. NaN, Inf, string)\n                println(\"value:NaN\")\n                println(\"query_status:1\")\n            }\n        } else {\n            // Query succeeded but returned empty result set\n            println(\"value:NaN\")\n            println(\"query_status:1\")\n        }\n    } else {\n        // HTTP error from Thanos\n        println(\"value:NaN\")\n        println(\"query_status:2\")\n    }\n} catch (Exception e) {\n    println(\"value:NaN\")\n    println(\"query_status:2\")\n}\n\nreturn 0"
+  },
+  "type": 0,
+  "technicalNotes": "Queries Thanos/Prometheus PromQL HTTP API via LM Collector",
+  "useWildValueAsUniqueIdentifier": false,
+  "version": 1770327980,
+  "registryMetadata": {
+    "currentUuid": "E1Strdd9SPSuihStBV0VVw",
+    "originalUuid": "E1Strdd9SPSuihStBV0VVw",
+    "locatorId": "",
+    "authorCompanyUuid": "56c5c6a6-58e4-4b5c-9d7e-629ce3fe75cf",
+    "registryVersion": "1.0.0",
+    "checksum": "cd191c8c93fc2c5de64a7c6c0a88f885",
+    "namespace": "",
+    "registryId": "",
+    "isChangedFromOrigin": true,
+    "status": ""
+  },
+  "multiInstance": true,
+  "name": "Thanos_PromQL_Collector",
+  "collectionInterval": "1m",
+  "dataSourceType": 1,
+  "group": "Thanos"
+}
