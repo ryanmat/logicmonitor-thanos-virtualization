@@ -188,7 +188,7 @@ repository. Import order does not matter.
 
 | File | Description |
 |------|-------------|
-| `KubeVirt_Cluster_Overview_v2.json` | Cluster-wide health, VM counts, migration status (11 datapoints) |
+| `KubeVirt_Cluster_Overview.json` | Cluster-wide health, VM counts, migration status (11 datapoints) |
 | `KubeVirt_VMI_Discovery.json` | VMI discovery and status tracking (1 datapoint) |
 | `KubeVirt_VMI_CPU.json` | Per-VMI CPU utilization and vCPU metrics (6 datapoints) |
 | `KubeVirt_VMI_Memory.json` | Per-VMI memory usage, swap, and page faults (10 datapoints) |
@@ -228,13 +228,13 @@ property.
 | Property | Required | Default | Value |
 |----------|----------|---------|-------|
 | `kubevirt.thanos.host` | Yes | -- | Thanos Querier route hostname from Section 2.2 |
-| `kubevirt.thanos.token` | Yes | -- | Bearer token from Section 2.5 (full JWT string) |
+| `kubevirt.thanos.pass` | Yes | -- | Bearer token from Section 2.5 (full JWT string) |
 | `kubevirt.thanos.port` | No | `443` | Only set if using a non-standard port |
 | `kubevirt.thanos.ssl` | No | `true` | Set to `false` only if Thanos is not behind TLS |
 
 Once both required properties are set, all 6 DataSources automatically attach
 to the device via the `appliesTo` expression:
-`kubevirt.thanos.host && kubevirt.thanos.token`.
+`kubevirt.thanos.host && kubevirt.thanos.pass`.
 
 ### 3.4 Verify Active Discovery
 
@@ -292,7 +292,7 @@ oc create token logicmonitor-thanos-reader \
   --duration=8760h
 ```
 
-Then update the `kubevirt.thanos.token` property on the device in LogicMonitor.
+Then update the `kubevirt.thanos.pass` property on the device in LogicMonitor.
 
 The Collector caches device properties, so there is a 5-10 minute delay before
 the new token takes effect. Data collection will resume automatically once the
@@ -330,7 +330,7 @@ each cluster.
 
 ### No DataSources Appearing on Device
 
-- Verify both `kubevirt.thanos.host` **and** `kubevirt.thanos.token` are set
+- Verify both `kubevirt.thanos.host` **and** `kubevirt.thanos.pass` are set
   as device properties
 - Property names are case-sensitive -- double-check the exact spelling
 - Both properties must be non-empty for the `appliesTo` expression to match
@@ -400,7 +400,7 @@ To enable debug logging for the Groovy collection scripts:
 
 | File | Display Name | Collection | Discovery | Instances | Datapoints |
 |------|-------------|------------|-----------|-----------|------------|
-| `KubeVirt_Cluster_Overview_v2.json` | KubeVirt Cluster Overview | 1 min | 15 min | 1 (cluster) | 11 |
+| `KubeVirt_Cluster_Overview.json` | KubeVirt Cluster Overview | 1 min | 15 min | 1 (cluster) | 11 |
 | `KubeVirt_VMI_Discovery.json` | KubeVirt VMI Discovery | 1 min | 15 min | Per VMI | 1 |
 | `KubeVirt_VMI_CPU.json` | KubeVirt VMI CPU | 1 min | 15 min | Per VMI | 6 |
 | `KubeVirt_VMI_Memory.json` | KubeVirt VMI Memory | 1 min | 15 min | Per VMI | 10 |
@@ -410,7 +410,7 @@ To enable debug logging for the Groovy collection scripts:
 **Total: 44 datapoints across 6 DataSources**
 
 All DataSources use:
-- `appliesTo`: `kubevirt.thanos.host && kubevirt.thanos.token`
+- `appliesTo`: `kubevirt.thanos.host && kubevirt.thanos.pass`
 - `collectionMethod`: `script` (Groovy)
 - `group`: `KubeVirt`
 - Instance Level Property (ILP) grouping by `auto.vmi.namespace`
