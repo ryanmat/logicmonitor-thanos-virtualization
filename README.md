@@ -1,15 +1,22 @@
-<!-- Description: README for KubeVirt Thanos DataSources for LogicMonitor. -->
-<!-- Description: Covers architecture, DataSource inventory, metrics, setup, and troubleshooting. -->
+<!-- Description: README for LogicMonitor Thanos-based DataSources (KubeVirt suite and generic PromQL collector). -->
+<!-- Description: Covers architecture, DataSource inventory, metrics, device properties, setup, and troubleshooting. -->
 
-# KubeVirt Thanos DataSources for LogicMonitor
+# LogicMonitor Thanos DataSources
 
-LogicMonitor DataSources for monitoring OpenShift Virtualization (KubeVirt) VMs by querying Thanos Querier directly.
+LogicMonitor DataSources that query Thanos Querier endpoints. Includes a purpose-built KubeVirt monitoring suite for OpenShift Virtualization and a generic PromQL collector for custom queries.
 
 ## Overview
 
-This project provides a suite of LogicMonitor DataSources to monitor KubeVirt virtual machines running on OpenShift. It queries the Thanos Querier API to collect VM metrics, providing an alternative to the OpenMetrics module with more control over metric collection and instance grouping.
+This project contains two distinct DataSource suites, both querying Thanos Querier over HTTPS:
 
-## Architecture
+| Suite | DataSources | Purpose | Device Properties |
+|-------|-------------|---------|-------------------|
+| **KubeVirt** (6 DataSources) | Cluster Overview, VMI Discovery, CPU, Memory, Network, Storage | Monitor OpenShift Virtualization VMs with pre-built metrics and graphs | `kubevirt.thanos.*` |
+| **Thanos PromQL Collector** (1 DataSource) | Generic PromQL collector | Run arbitrary PromQL queries defined in device properties | `thanos.*` |
+
+The two suites use **different property namespaces** and can run independently on separate devices, or on the same device if both property sets are configured.
+
+## Architecture (KubeVirt Suite)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -75,20 +82,141 @@ This project provides a suite of LogicMonitor DataSources to monitor KubeVirt vi
 - **Standard API**: Same PromQL interface regardless of backend topology
 - **Future-proof**: Supports multi-cluster aggregation if needed
 
-## DataSources Included
+---
 
-| DataSource | ID | Instances | Collection Interval | Description |
-|------------|-----|-----------|---------------------|-------------|
-| KubeVirt_VMI_Discovery | 11442178 | Per VM | 1 min | Discovers VMs, tracks running state |
-| KubeVirt_VMI_CPU | 11442179 | Per VM | 1 min | CPU usage, system/user time, vCPU metrics |
-| KubeVirt_VMI_Memory | 11442180 | Per VM | 1 min | Memory usage, available, cached, swap |
-| KubeVirt_VMI_Network | 11442181 | Per VM | 1 min | Network throughput, packets, errors |
-| KubeVirt_VMI_Storage | 11442182 | Per VM | 1 min | Disk throughput, IOPS, latency |
-| KubeVirt_Cluster_Overview | 11442177 | Cluster | 1 min | Cluster-wide VM counts and health |
+## KubeVirt DataSources (6)
 
-All VMI DataSources use **Instance Level Property (ILP) grouping** by namespace, so VMs are automatically organized by their Kubernetes namespace in LogicMonitor.
+For the full setup walkthrough, see the [Setup Guide](documentation/setup-guide.md).
 
-## Metrics Collected
+### DataSource Inventory
+
+| DataSource | Instances | Collection | Discovery | Datapoints | Description |
+|------------|-----------|------------|-----------|------------|-------------|
+| KubeVirt_Cluster_Overview | 1 (cluster) | 1 min | 15 min | 11 | Cluster-wide VM counts and health |
+| KubeVirt_VMI_Discovery | Per VM | 1 min | 15 min | 1 | Discovers VMs, tracks running state |
+| KubeVirt_VMI_CPU | Per VM | 1 min | 15 min | 6 | CPU usage, system/user time, vCPU metrics |
+| KubeVirt_VMI_Memory | Per VM | 1 min | 15 min | 10 | Memory usage, available, cached, swap |
+| KubeVirt_VMI_Network | Per VM | 1 min | 15 min | 8 | Network throughput, packets, errors |
+| KubeVirt_VMI_Storage | Per VM | 1 min | 15 min | 8 | Disk throughput, IOPS, latency |
+
+**Total: 44 datapoints across 6 DataSources.**
+
+All KubeVirt DataSources use:
+- **appliesTo**: `kubevirt.thanos.host && kubevirt.thanos.pass`
+- **Group**: `KubeVirt`
+- **ILP grouping** by `auto.vmi.namespace` (VMs organized by Kubernetes namespace)
+
+### Device Properties (KubeVirt)
+
+| Property | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `kubevirt.thanos.host` | Yes | - | Thanos Querier route hostname |
+| `kubevirt.thanos.pass` | Yes | - | Service account bearer token |
+| `kubevirt.thanos.port` | No | 443 | Thanos Querier port |
+| `kubevirt.thanos.ssl` | No | true | Use HTTPS |
+
+### Quick Setup (KubeVirt)
+
+For the full step-by-step walkthrough, see the [Setup Guide](documentation/setup-guide.md).
+
+```bash
+# 1. Get the Thanos Querier route
+oc get route thanos-querier -n openshift-monitoring -o jsonpath='{.spec.host}'
+
+# 2. Create a dedicated service account
+oc create serviceaccount logicmonitor-thanos-reader -n openshift-monitoring
+
+# 3. Grant read-only monitoring access
+oc adm policy add-cluster-role-to-user cluster-monitoring-view \
+  -z logicmonitor-thanos-reader -n openshift-monitoring
+
+# 4. Generate a bearer token (1 year)
+oc create token logicmonitor-thanos-reader -n openshift-monitoring --duration=8760h
+```
+
+Then in LogicMonitor:
+1. Import all 6 `KubeVirt_*.json` files from `datasources/`
+2. Create a device with the Thanos route as hostname
+3. Set `kubevirt.thanos.host` and `kubevirt.thanos.pass` as device properties
+4. All 6 DataSources attach automatically and Active Discovery finds your VMs
+
+### Instance Properties (KubeVirt)
+
+Each discovered VMI receives these auto-populated properties:
+
+| Property | Description | Example |
+|----------|-------------|---------|
+| `auto.vmi.name` | VM instance name | `my-rhel-vm` |
+| `auto.vmi.namespace` | Kubernetes namespace (ILP grouping) | `default` |
+| `auto.vmi.node` | Node hosting the VMI | `worker-0.ocp.example.com` |
+| `auto.vmi.phase` | VMI lifecycle phase (Discovery DS only) | `running` |
+
+---
+
+## Thanos PromQL Collector (1)
+
+A generic, configurable DataSource that executes arbitrary PromQL queries against any Thanos endpoint. Queries are defined entirely through device properties, so no code changes are needed to add new metrics.
+
+### How It Works
+
+1. Set `thanos.host` and `thanos.pass` on a device to activate the DataSource
+2. Define numbered query properties (`thanos.query.1.name`, `thanos.query.1.promql`, etc.)
+3. Active Discovery creates one LM instance per query
+4. Collection executes each PromQL query and stores the numeric result
+
+### Device Properties (PromQL Collector)
+
+**Connection properties:**
+
+| Property | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `thanos.host` | Yes | - | Thanos Querier hostname |
+| `thanos.pass` | Yes | - | Bearer token |
+| `thanos.port` | No | 443 | Thanos Querier port |
+| `thanos.ssl` | No | true | Use HTTPS |
+
+**Query properties** (repeat for each query, numbered 1-99):
+
+| Property | Required | Description |
+|----------|----------|-------------|
+| `thanos.query.N.name` | Yes | Instance name (used as LM instance ID) |
+| `thanos.query.N.promql` | Yes | PromQL query expression |
+| `thanos.query.N.group` | No | Instance group name (default: `default`) |
+
+### Datapoints
+
+| Datapoint | Description |
+|-----------|-------------|
+| `value` | Numeric result of the PromQL query |
+| `query_status` | Execution status: 0=success, 1=empty/non-numeric, 2=connection/auth error |
+
+### Example
+
+To monitor custom metrics, set these device properties:
+
+```
+thanos.host = thanos-querier-openshift-monitoring.apps.cluster.example.com
+thanos.pass = <bearer-token>
+thanos.query.1.name = etcd_db_size
+thanos.query.1.promql = sum(etcd_mvcc_db_total_size_in_bytes)
+thanos.query.1.group = etcd
+thanos.query.2.name = api_request_rate
+thanos.query.2.promql = sum(rate(apiserver_request_total[5m]))
+thanos.query.2.group = apiserver
+```
+
+Active Discovery creates two instances (`etcd_db_size` and `api_request_rate`), grouped under `etcd` and `apiserver` respectively.
+
+---
+
+## Prerequisites
+
+- OpenShift 4.12+ with OpenShift Virtualization (KubeVirt/CNV) installed (for KubeVirt suite)
+- Any Thanos Querier endpoint accessible over HTTPS (for PromQL Collector)
+- LogicMonitor Collector with network access to the Thanos endpoint
+- Service account with monitoring read access (recommended: dedicated `logicmonitor-thanos-reader` SA)
+
+## Metrics Collected (KubeVirt)
 
 ### Discovery (1 datapoint)
 | Metric | Description |
@@ -158,9 +286,9 @@ All VMI DataSources use **Instance Level Property (ILP) grouping** by namespace,
 | `migrations_running` | Active VM migrations |
 | `migrations_scheduling` | VM migrations in scheduling state |
 
-## Graphs Included
+## Graphs Included (KubeVirt)
 
-Each DataSource includes pre-configured graphs:
+Each KubeVirt DataSource includes pre-configured graphs:
 
 - **Discovery**: VMI Status
 - **CPU**: CPU Usage, vCPU Metrics
@@ -168,89 +296,27 @@ Each DataSource includes pre-configured graphs:
 - **Network**: Network Throughput, Network Packets, Network Errors
 - **Storage**: Storage Throughput, Storage IOPS, Storage Latency
 
-## Prerequisites
+## Token Rotation
 
-- OpenShift 4.12+ with OpenShift Virtualization (KubeVirt/CNV) installed
-- LogicMonitor Collector with HTTPS access to OpenShift cluster
-- Service account with metrics read access (e.g., `logicmonitor-thanos-reader` or custom)
-
-## Device Properties Required
-
-| Property | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `kubevirt.thanos.host` | Yes | - | Thanos Querier route hostname |
-| `kubevirt.thanos.pass` | Yes | - | Service account bearer token |
-| `kubevirt.thanos.port` | No | 443 | Thanos Querier port |
-| `kubevirt.thanos.ssl` | No | true | Use HTTPS |
-
-## Setup Instructions
-
-### 1. Get Thanos Querier Route
-
-```bash
-oc get route thanos-querier -n openshift-monitoring -o jsonpath='{.spec.host}'
-```
-
-### 2. Create a Long-Lived Token
-
-Using the existing `prometheus-k8s` service account (has monitoring read access):
-
-```bash
-# Create token valid for 1 year
-oc create token prometheus-k8s -n openshift-monitoring --duration=8760h
-```
-
-Or create a dedicated service account:
-
-```bash
-# Create ServiceAccount
-oc create serviceaccount logicmonitor-thanos-reader -n openshift-monitoring
-
-# Grant cluster-monitoring-view role
-oc adm policy add-cluster-role-to-user cluster-monitoring-view \
-  -z logicmonitor-thanos-reader -n openshift-monitoring
-
-# Create long-lived token
-oc create token logicmonitor-thanos-reader -n openshift-monitoring --duration=8760h
-```
-
-### 3. Create Device in LogicMonitor
-
-1. Add a new device in LogicMonitor
-2. Set the hostname to the Thanos Querier route (e.g., `thanos-querier-openshift-monitoring.apps.cluster.example.com`)
-3. Add the following custom properties:
-   - `kubevirt.thanos.host` = Thanos Querier route hostname
-   - `kubevirt.thanos.pass` = Service account bearer token
-
-### 4. Apply DataSources
-
-The DataSources should automatically apply to any device with both `kubevirt.thanos.host` and `kubevirt.thanos.pass` properties set. Active Discovery will run and discover all VMIs.
-
-## Instance Grouping
-
-VMI instances are automatically grouped by namespace using Instance Level Properties (ILP). The `auto.vmi.namespace` property is set during discovery and used for grouping.
-
-Example instance properties:
-- `auto.vmi.name` - VM name
-- `auto.vmi.namespace` - Kubernetes namespace
-- `auto.vmi.node` - Node where VM is running
-- `auto.vmi.phase` - VM phase (running, pending, etc.)
-
-## Token Expiration
-
-Service account tokens created with `--duration` will expire. Monitor token expiration and rotate before it expires:
+Service account tokens expire based on the `--duration` flag. Rotate before expiration:
 
 ```bash
 # Check token expiration (decode JWT)
 echo "YOUR_TOKEN" | cut -d'.' -f2 | base64 -d 2>/dev/null | jq '.exp | todate'
 
-# Create new token
-oc create token prometheus-k8s -n openshift-monitoring --duration=8760h
+# Generate a new token
+oc create token logicmonitor-thanos-reader -n openshift-monitoring --duration=8760h
 ```
 
-Update the `kubevirt.thanos.pass` property in LogicMonitor when rotating tokens.
+Update the relevant property (`kubevirt.thanos.pass` or `thanos.pass`) in LogicMonitor. The Collector caches properties for 5-10 minutes, so data collection resumes automatically after the cache refreshes.
 
 ## Troubleshooting
+
+### No DataSources Appearing on Device
+
+- Verify both required properties are set (check the correct namespace: `kubevirt.thanos.*` for KubeVirt, `thanos.*` for PromQL Collector)
+- Property names are case-sensitive
+- Both required properties must be non-empty
 
 ### No Data Collected
 
@@ -269,7 +335,7 @@ Update the `kubevirt.thanos.pass` property in LogicMonitor when rotating tokens.
 
 ### Zeros After Token Refresh
 
-The LogicMonitor collector caches device properties. After updating the token, wait 5-10 minutes for the cache to refresh.
+The LogicMonitor Collector caches device properties. After updating the token, wait 5-10 minutes for the cache to refresh.
 
 ### Discovery Not Finding VMs
 

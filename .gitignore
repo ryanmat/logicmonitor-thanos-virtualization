@@ -62,6 +62,9 @@ out/
 test-output/
 coverage/
 
+# Windows Zone.Identifier metadata
+*:Zone.Identifier
+
 # Release artifacts (generated, not committed)
 release/
 *.zip
