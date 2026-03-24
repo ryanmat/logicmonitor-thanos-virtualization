@@ -1,20 +1,27 @@
-<!-- Description: README for LogicMonitor Thanos-based DataSources (KubeVirt suite and generic PromQL collector). -->
+<!-- Description: README for LogicMonitor OpenShift Thanos DataSource suite. -->
 <!-- Description: Covers architecture, DataSource inventory, metrics, device properties, setup, and troubleshooting. -->
 
-# LogicMonitor Thanos DataSources
+# OpenShift Thanos DataSource Suite
 
-LogicMonitor DataSources that query Thanos Querier endpoints. Includes a purpose-built KubeVirt monitoring suite for OpenShift Virtualization and a generic PromQL collector for custom queries.
+LogicMonitor DataSource suite for monitoring OpenShift environments via the Thanos Querier API. All suites share a single set of connection properties (`openshift.thanos.*`) and activate on the same device.
 
 ## Overview
 
-This project contains two distinct DataSource suites, both querying Thanos Querier over HTTPS:
+| Suite | DataSources | Datapoints | Directory | Purpose |
+|-------|-------------|------------|-----------|---------|
+| **KubeVirt** | 6 | 44 | `datasources/kubevirt/` | Monitor OpenShift Virtualization VMs |
+| **Thanos PromQL Collector** | 1 | 2 | `datasources/promql/` | Run arbitrary PromQL queries |
 
-| Suite | DataSources | Purpose | Device Properties |
-|-------|-------------|---------|-------------------|
-| **KubeVirt** (6 DataSources) | Cluster Overview, VMI Discovery, CPU, Memory, Network, Storage | Monitor OpenShift Virtualization VMs with pre-built metrics and graphs | `kubevirt.thanos.*` |
-| **Thanos PromQL Collector** (1 DataSource) | Generic PromQL collector | Run arbitrary PromQL queries defined in device properties | `thanos.*` |
+All suites use unified connection properties: `openshift.thanos.host` and `openshift.thanos.pass`. One device represents one cluster's Thanos Querier endpoint.
 
-The two suites use **different property namespaces** and can run independently on separate devices, or on the same device if both property sets are configured.
+## Shared Device Properties
+
+| Property | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `openshift.thanos.host` | Yes | - | Thanos Querier route hostname |
+| `openshift.thanos.pass` | Yes | - | Service account bearer token |
+| `openshift.thanos.port` | No | 443 | Thanos Querier port |
+| `openshift.thanos.ssl` | No | true | Use HTTPS |
 
 ## Architecture (KubeVirt Suite)
 
@@ -102,20 +109,11 @@ For the full setup walkthrough, see the [Setup Guide](documentation/setup-guide.
 **Total: 44 datapoints across 6 DataSources.**
 
 All KubeVirt DataSources use:
-- **appliesTo**: `kubevirt.thanos.host && kubevirt.thanos.pass`
+- **appliesTo**: `openshift.thanos.host && openshift.thanos.pass`
 - **Group**: `KubeVirt`
 - **ILP grouping** by `auto.vmi.namespace` (VMs organized by Kubernetes namespace)
 
-### Device Properties (KubeVirt)
-
-| Property | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `kubevirt.thanos.host` | Yes | - | Thanos Querier route hostname |
-| `kubevirt.thanos.pass` | Yes | - | Service account bearer token |
-| `kubevirt.thanos.port` | No | 443 | Thanos Querier port |
-| `kubevirt.thanos.ssl` | No | true | Use HTTPS |
-
-### Quick Setup (KubeVirt)
+### Quick Setup
 
 For the full step-by-step walkthrough, see the [Setup Guide](documentation/setup-guide.md).
 
@@ -135,10 +133,10 @@ oc create token logicmonitor-thanos-reader -n openshift-monitoring --duration=87
 ```
 
 Then in LogicMonitor:
-1. Import all 6 `KubeVirt_*.json` files from `datasources/`
+1. Import DataSource JSON files from the relevant `datasources/` subdirectories
 2. Create a device with the Thanos route as hostname
-3. Set `kubevirt.thanos.host` and `kubevirt.thanos.pass` as device properties
-4. All 6 DataSources attach automatically and Active Discovery finds your VMs
+3. Set `openshift.thanos.host` and `openshift.thanos.pass` as device properties
+4. All DataSources attach automatically and Active Discovery finds instances
 
 ### Instance Properties (KubeVirt)
 
@@ -159,29 +157,20 @@ A generic, configurable DataSource that executes arbitrary PromQL queries agains
 
 ### How It Works
 
-1. Set `thanos.host` and `thanos.pass` on a device to activate the DataSource
-2. Define numbered query properties (`thanos.query.1.name`, `thanos.query.1.promql`, etc.)
+1. Set `openshift.thanos.host` and `openshift.thanos.pass` on a device (shared connection properties)
+2. Define numbered query properties (`openshift.thanos.query.1.name`, `openshift.thanos.query.1.promql`, etc.)
 3. Active Discovery creates one LM instance per query
 4. Collection executes each PromQL query and stores the numeric result
 
-### Device Properties (PromQL Collector)
+### Query Properties (PromQL Collector)
 
-**Connection properties:**
-
-| Property | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `thanos.host` | Yes | - | Thanos Querier hostname |
-| `thanos.pass` | Yes | - | Bearer token |
-| `thanos.port` | No | 443 | Thanos Querier port |
-| `thanos.ssl` | No | true | Use HTTPS |
-
-**Query properties** (repeat for each query, numbered 1-99):
+Repeat for each query, numbered 1-99:
 
 | Property | Required | Description |
 |----------|----------|-------------|
-| `thanos.query.N.name` | Yes | Instance name (used as LM instance ID) |
-| `thanos.query.N.promql` | Yes | PromQL query expression |
-| `thanos.query.N.group` | No | Instance group name (default: `default`) |
+| `openshift.thanos.query.N.name` | Yes | Instance name (used as LM instance ID) |
+| `openshift.thanos.query.N.promql` | Yes | PromQL query expression |
+| `openshift.thanos.query.N.group` | No | Instance group name (default: `default`) |
 
 ### Datapoints
 
@@ -195,14 +184,14 @@ A generic, configurable DataSource that executes arbitrary PromQL queries agains
 To monitor custom metrics, set these device properties:
 
 ```
-thanos.host = thanos-querier-openshift-monitoring.apps.cluster.example.com
-thanos.pass = <bearer-token>
-thanos.query.1.name = etcd_db_size
-thanos.query.1.promql = sum(etcd_mvcc_db_total_size_in_bytes)
-thanos.query.1.group = etcd
-thanos.query.2.name = api_request_rate
-thanos.query.2.promql = sum(rate(apiserver_request_total[5m]))
-thanos.query.2.group = apiserver
+openshift.thanos.host = thanos-querier-openshift-monitoring.apps.cluster.example.com
+openshift.thanos.pass = <bearer-token>
+openshift.thanos.query.1.name = etcd_db_size
+openshift.thanos.query.1.promql = sum(etcd_mvcc_db_total_size_in_bytes)
+openshift.thanos.query.1.group = etcd
+openshift.thanos.query.2.name = api_request_rate
+openshift.thanos.query.2.promql = sum(rate(apiserver_request_total[5m]))
+openshift.thanos.query.2.group = apiserver
 ```
 
 Active Discovery creates two instances (`etcd_db_size` and `api_request_rate`), grouped under `etcd` and `apiserver` respectively.
@@ -308,13 +297,13 @@ echo "YOUR_TOKEN" | cut -d'.' -f2 | base64 -d 2>/dev/null | jq '.exp | todate'
 oc create token logicmonitor-thanos-reader -n openshift-monitoring --duration=8760h
 ```
 
-Update the relevant property (`kubevirt.thanos.pass` or `thanos.pass`) in LogicMonitor. The Collector caches properties for 5-10 minutes, so data collection resumes automatically after the cache refreshes.
+Update `openshift.thanos.pass` in LogicMonitor. The Collector caches properties for 5-10 minutes, so data collection resumes automatically after the cache refreshes.
 
 ## Troubleshooting
 
 ### No DataSources Appearing on Device
 
-- Verify both required properties are set (check the correct namespace: `kubevirt.thanos.*` for KubeVirt, `thanos.*` for PromQL Collector)
+- Verify both required properties are set: `openshift.thanos.host` and `openshift.thanos.pass`
 - Property names are case-sensitive
 - Both required properties must be non-empty
 

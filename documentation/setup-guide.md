@@ -1,13 +1,13 @@
 <!-- Description: Customer setup guide for KubeVirt Thanos DataSources for LogicMonitor. -->
 <!-- Description: Covers OpenShift prerequisites, token generation, LM portal configuration, and troubleshooting. -->
 
-# KubeVirt Thanos DataSources - Setup Guide
+# OpenShift Thanos DataSources - Setup Guide
 
 This guide walks through the complete setup of LogicMonitor monitoring for
-OpenShift Virtualization (KubeVirt) virtual machines. The DataSources in this
-project query the Thanos Querier API for KubeVirt metrics, allowing any
-LogicMonitor Collector with HTTPS access to the cluster to monitor all VMs
-without requiring an in-cluster collector.
+OpenShift environments via the Thanos Querier API. The DataSources in this
+project query Thanos for KubeVirt VM metrics, etcd cluster health, and custom
+PromQL queries, allowing any LogicMonitor Collector with HTTPS access to the
+cluster to monitor OpenShift without requiring an in-cluster collector.
 
 For architecture details and metric documentation, see the project
 [README](../README.md).
@@ -88,8 +88,8 @@ unified PromQL API across all Prometheus instances in the cluster.
 oc get route thanos-querier -n openshift-monitoring -o jsonpath='{.spec.host}'
 ```
 
-Save this value. It becomes the `kubevirt.thanos.host` device property in
-LogicMonitor. The output looks like:
+Save this value. It becomes the `openshift.thanos.host` device property in
+LogicMonitor (shared by all DataSource suites). The output looks like:
 
 ```
 thanos-querier-openshift-monitoring.apps.<cluster-name>.<base-domain>
@@ -183,8 +183,11 @@ curl -sk -H "Authorization: Bearer ${TOKEN}" \
 
 ### 3.1 Import DataSource JSON Files
 
-Import all 6 DataSource files from the `datasources/` directory in this
-repository. Import order does not matter.
+Import DataSource files from the `datasources/` subdirectories in this
+repository. Import the suites relevant to your environment. Import order does
+not matter.
+
+**KubeVirt Suite** (`datasources/kubevirt/`):
 
 | File | Description |
 |------|-------------|
@@ -194,6 +197,12 @@ repository. Import order does not matter.
 | `KubeVirt_VMI_Memory.json` | Per-VMI memory usage, swap, and page faults (10 datapoints) |
 | `KubeVirt_VMI_Network.json` | Per-VMI network throughput, packets, errors (8 datapoints) |
 | `KubeVirt_VMI_Storage.json` | Per-VMI storage throughput, IOPS, latency (8 datapoints) |
+
+**PromQL Collector** (`datasources/promql/`):
+
+| File | Description |
+|------|-------------|
+| `Thanos_PromQL_Collector.json` | Generic PromQL query executor (2 datapoints per query) |
 
 **Steps:**
 
@@ -227,14 +236,14 @@ property.
 
 | Property | Required | Default | Value |
 |----------|----------|---------|-------|
-| `kubevirt.thanos.host` | Yes | -- | Thanos Querier route hostname from Section 2.2 |
-| `kubevirt.thanos.pass` | Yes | -- | Bearer token from Section 2.5 (full JWT string) |
-| `kubevirt.thanos.port` | No | `443` | Only set if using a non-standard port |
-| `kubevirt.thanos.ssl` | No | `true` | Set to `false` only if Thanos is not behind TLS |
+| `openshift.thanos.host` | Yes | -- | Thanos Querier route hostname from Section 2.2 |
+| `openshift.thanos.pass` | Yes | -- | Bearer token from Section 2.5 (full JWT string) |
+| `openshift.thanos.port` | No | `443` | Only set if using a non-standard port |
+| `openshift.thanos.ssl` | No | `true` | Set to `false` only if Thanos is not behind TLS |
 
 Once both required properties are set, all 6 DataSources automatically attach
 to the device via the `appliesTo` expression:
-`kubevirt.thanos.host && kubevirt.thanos.pass`.
+`openshift.thanos.host && openshift.thanos.pass`.
 
 ### 3.4 Verify Active Discovery
 
@@ -292,7 +301,7 @@ oc create token logicmonitor-thanos-reader \
   --duration=8760h
 ```
 
-Then update the `kubevirt.thanos.pass` property on the device in LogicMonitor.
+Then update the `openshift.thanos.pass` property on the device in LogicMonitor.
 
 The Collector caches device properties, so there is a 5-10 minute delay before
 the new token takes effect. Data collection will resume automatically once the
@@ -315,11 +324,11 @@ there is no need to import them more than once.
 
 **Recommended naming convention:**
 
-| Cluster | Device Display Name | kubevirt.thanos.host |
+| Cluster | Device Display Name | openshift.thanos.host |
 |---------|--------------------|-----------------------|
-| Production | `ocp-prod-kubevirt` | `thanos-querier-openshift-monitoring.apps.prod.example.com` |
-| Staging | `ocp-staging-kubevirt` | `thanos-querier-openshift-monitoring.apps.staging.example.com` |
-| Development | `ocp-dev-kubevirt` | `thanos-querier-openshift-monitoring.apps.dev.example.com` |
+| Production | `ocp-prod-thanos` | `thanos-querier-openshift-monitoring.apps.prod.example.com` |
+| Staging | `ocp-staging-thanos` | `thanos-querier-openshift-monitoring.apps.staging.example.com` |
+| Development | `ocp-dev-thanos` | `thanos-querier-openshift-monitoring.apps.dev.example.com` |
 
 Each device uses its own service account token. Follow Sections 2.3-2.5 for
 each cluster.
@@ -330,7 +339,7 @@ each cluster.
 
 ### No DataSources Appearing on Device
 
-- Verify both `kubevirt.thanos.host` **and** `kubevirt.thanos.pass` are set
+- Verify both `openshift.thanos.host` **and** `openshift.thanos.pass` are set
   as device properties
 - Property names are case-sensitive -- double-check the exact spelling
 - Both properties must be non-empty for the `appliesTo` expression to match
@@ -410,7 +419,7 @@ To enable debug logging for the Groovy collection scripts:
 **Total: 44 datapoints across 6 DataSources**
 
 All DataSources use:
-- `appliesTo`: `kubevirt.thanos.host && kubevirt.thanos.pass`
+- `appliesTo`: `openshift.thanos.host && openshift.thanos.pass`
 - `collectionMethod`: `script` (Groovy)
 - `group`: `KubeVirt`
 - Instance Level Property (ILP) grouping by `auto.vmi.namespace`

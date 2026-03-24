@@ -1,0 +1,68 @@
+{
+  "collectionMethod": "script",
+  "datapoints": [
+    {
+      "max": "4",
+      "triggerInterval": 5,
+      "dataType": 7,
+      "maxDigits": 4,
+      "description": "VMI Status (1=running, 2=scheduling, 3=pending, 4=failed, 0=unknown)",
+      "interpretMethod": "namevalue",
+      "threshold": "!= 1",
+      "interpretExpr": "status",
+      "type": "gauge",
+      "clearInterval": 0,
+      "originId": "_TuvIWGYSNKUxY6PAZZSLA",
+      "useValue": "output",
+      "min": "0",
+      "name": "status",
+      "noData": "Do not trigger an alert",
+      "statusDisplayNames": []
+    }
+  ],
+  "searchKeywords": "vmi,virtualization,discovery,openshift,kubevirt,status",
+  "displayedAs": "KubeVirt VMI Discovery",
+  "description": "Discovers and monitors KubeVirt Virtual Machine Instances (VMIs) via Thanos Querier",
+  "appliesTo": "openshift.thanos.host && openshift.thanos.pass",
+  "activeDiscovery": {
+    "groupExpr": "auto.vmi.namespace",
+    "deleteInactiveInstances": true,
+    "groupMethod": "ilp",
+    "discoveryMethod": "ad_script",
+    "autoDeleteInstances": false,
+    "disableDiscoveredInstances": false,
+    "filters": [],
+    "params": {
+      "type": "groovy",
+      "content": "// Description: Discovers KubeVirt VMI instances and their lifecycle phase via Thanos Querier.\n// Description: Returns namespace-qualified instance IDs grouped by auto.vmi.namespace.\nimport groovy.json.JsonSlurper\nimport javax.net.ssl.*\nimport java.security.cert.X509Certificate\n\ndef host = hostProps.get(\"openshift.thanos.host\")\ndef token = hostProps.get(\"openshift.thanos.pass\")\ndef port = hostProps.get(\"openshift.thanos.port\") ?: \"443\"\ndef useSsl = (hostProps.get(\"openshift.thanos.ssl\") ?: \"true\").toLowerCase() == \"true\"\n\nif (!host || !token) {\n    println \"openshift.thanos.host and openshift.thanos.pass properties are required\"\n    return 1\n}\n\ndef trustAllCerts = [\n    checkClientTrusted: { chain, authType -> },\n    checkServerTrusted: { chain, authType -> },\n    getAcceptedIssuers: { null }\n] as X509TrustManager\n\ndef sc = SSLContext.getInstance(\"TLS\")\nsc.init(null, [trustAllCerts] as TrustManager[], null)\nHttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory())\nHttpsURLConnection.setDefaultHostnameVerifier({ hostname, session -> true } as HostnameVerifier)\n\ndef proto = useSsl ? \"https\" : \"http\"\ndef baseUrl = \"${proto}://${host}:${port}\"\n\ntry {\n    def query = 'kubevirt_vmi_info'\n    def encoded = java.net.URLEncoder.encode(query, \"UTF-8\")\n    def url = new URL(\"${baseUrl}/api/v1/query?query=${encoded}\")\n    def conn = url.openConnection()\n    conn.setRequestProperty(\"Authorization\", \"Bearer ${token}\")\n    conn.setConnectTimeout(30000)\n    conn.setReadTimeout(30000)\n\n    if (conn.responseCode == 200) {\n        def response = conn.inputStream.text\n        def json = new JsonSlurper().parseText(response)\n\n        if (json.status == \"success\" && json.data?.result) {\n            json.data.result.each { result ->\n                def labels = result.metric\n                def name = labels.name ?: \"unknown\"\n                def namespace = labels.namespace ?: \"default\"\n                def node = labels.node ?: \"unknown\"\n                def phase = labels.phase ?: \"unknown\"\n\n                def instanceId = \"${namespace}_${name}\"\n                def displayName = name\n                def description = \"VMI ${name} in namespace ${namespace} on node ${node}\"\n\n                println \"${instanceId}##${displayName}##${description}####auto.vmi.name=${name}&auto.vmi.namespace=${namespace}&auto.vmi.node=${node}&auto.vmi.phase=${phase}\"\n            }\n        }\n    } else {\n        System.err.println(\"Discovery failed: HTTP ${conn.responseCode}\")\n    }\n} catch (Exception e) {\n    System.err.println(\"Discovery error: ${e.message}\")\n    return 1\n}\nreturn 0\n"
+    },
+    "discoveryInterval": "15m",
+    "enabled": true,
+    "showDeletedInstanceDays": 0
+  },
+  "collectionAttrs": {
+    "type": "groovy",
+    "content": "// Description: Collects VMI lifecycle status by querying kubevirt_vmi_info phase label.\n// Description: Maps phase strings to numeric status codes (1=running, 2=scheduling, 3=pending, 4=failed).\nimport groovy.json.JsonSlurper\nimport javax.net.ssl.*\nimport java.security.cert.X509Certificate\n\ndef host = hostProps.get(\"openshift.thanos.host\")\ndef token = hostProps.get(\"openshift.thanos.pass\")\ndef port = hostProps.get(\"openshift.thanos.port\") ?: \"443\"\ndef useSsl = (hostProps.get(\"openshift.thanos.ssl\") ?: \"true\").toLowerCase() == \"true\"\n\ndef vmiName = instanceProps.get(\"auto.vmi.name\")\n\nif (!host || !token || !vmiName) {\n    println(\"status:0\")\n    return 0\n}\n\ndef trustAllCerts = [\n    checkClientTrusted: { chain, authType -> },\n    checkServerTrusted: { chain, authType -> },\n    getAcceptedIssuers: { null }\n] as X509TrustManager\n\ndef sc = SSLContext.getInstance(\"TLS\")\nsc.init(null, [trustAllCerts] as TrustManager[], null)\nHttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory())\nHttpsURLConnection.setDefaultHostnameVerifier({ hostname, session -> true } as HostnameVerifier)\n\ndef proto = useSsl ? \"https\" : \"http\"\ndef baseUrl = \"${proto}://${host}:${port}\"\n\ntry {\n    def query = 'kubevirt_vmi_info{name=\"' + vmiName + '\"}'\n    def encoded = java.net.URLEncoder.encode(query, \"UTF-8\")\n    def url = new URL(\"${baseUrl}/api/v1/query?query=${encoded}\")\n    def conn = url.openConnection()\n    conn.setRequestProperty(\"Authorization\", \"Bearer ${token}\")\n    conn.setConnectTimeout(30000)\n    conn.setReadTimeout(30000)\n\n    if (conn.responseCode == 200) {\n        def response = conn.inputStream.text\n        def json = new JsonSlurper().parseText(response)\n        if (json.status == \"success\" && json.data?.result?.size() > 0) {\n            def phase = json.data.result[0].metric?.phase ?: \"unknown\"\n            def statusVal = 0\n            switch(phase.toLowerCase()) {\n                case \"running\": statusVal = 1; break\n                case \"scheduling\": statusVal = 2; break\n                case \"pending\": statusVal = 3; break\n                case \"failed\": statusVal = 4; break\n            }\n            println(\"status:\" + statusVal)\n            return 0\n        }\n    } else {\n        System.err.println(\"Status query failed: HTTP ${conn.responseCode}\")\n    }\n} catch (Exception e) {\n    System.err.println(\"Status query error: ${e.message}\")\n}\n\nprintln(\"status:0\")\nreturn 0"
+  },
+  "type": 0,
+  "technicalNotes": "Discovers VMIs from kubevirt_vmi_info metric. Collection maps phase label to numeric status (1-4).",
+  "useWildValueAsUniqueIdentifier": false,
+  "version": 1771438181,
+  "registryMetadata": {
+    "currentUuid": "rJkZfpz7RVeoqDNzmObbrw",
+    "originalUuid": "rJkZfpz7RVeoqDNzmObbrw",
+    "locatorId": "",
+    "authorCompanyUuid": "56c5c6a6-58e4-4b5c-9d7e-629ce3fe75cf",
+    "registryVersion": "1.0.0",
+    "checksum": "ccc23f4b73285332167dd03426801d34",
+    "namespace": "",
+    "registryId": "",
+    "isChangedFromOrigin": false,
+    "status": ""
+  },
+  "multiInstance": true,
+  "name": "KubeVirt_VMI_Discovery",
+  "collectionInterval": "1m",
+  "dataSourceType": 1,
+  "group": "KubeVirt"
+}
