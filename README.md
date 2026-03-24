@@ -10,6 +10,7 @@ LogicMonitor DataSource suite for monitoring OpenShift environments via the Than
 | Suite | DataSources | Datapoints | Directory | Purpose |
 |-------|-------------|------------|-----------|---------|
 | **KubeVirt** | 6 | 44 | `datasources/kubevirt/` | Monitor OpenShift Virtualization VMs |
+| **Etcd** | 3 | 23 | `datasources/etcd/` | Monitor etcd cluster health, disk, and network |
 | **Thanos PromQL Collector** | 1 | 2 | `datasources/promql/` | Run arbitrary PromQL queries |
 
 All suites use unified connection properties: `openshift.thanos.host` and `openshift.thanos.pass`. One device represents one cluster's Thanos Querier endpoint.
@@ -148,6 +149,74 @@ Each discovered VMI receives these auto-populated properties:
 | `auto.vmi.namespace` | Kubernetes namespace (ILP grouping) | `default` |
 | `auto.vmi.node` | Node hosting the VMI | `worker-0.ocp.example.com` |
 | `auto.vmi.phase` | VMI lifecycle phase (Discovery DS only) | `running` |
+
+---
+
+## Etcd DataSources (3)
+
+Monitors OpenShift etcd cluster health via the same Thanos Querier endpoint. Etcd metrics are always available on OpenShift clusters since etcd is a core control plane component. No additional service account permissions are needed beyond `cluster-monitoring-view`.
+
+### DataSource Inventory
+
+| DataSource | Instances | Collection | Discovery | Datapoints | Description |
+|------------|-----------|------------|-----------|------------|-------------|
+| Etcd_Cluster_Overview | 1 (cluster) | 1 min | 15 min | 8 | Cluster-wide member counts, leader health, aggregate proposals |
+| Etcd_Member_Discovery | Per member | 1 min | 15 min | 2 | Discovers members, tracks leader status |
+| Etcd_Member_Performance | Per member | 1 min | 15 min | 13 | WAL/commit latency, proposals, db size, peer network |
+
+**Total: 23 datapoints across 3 DataSources.**
+
+All Etcd DataSources use:
+- **appliesTo**: `openshift.thanos.host && openshift.thanos.pass`
+- **Group**: `Etcd`
+- **ILP grouping** by `auto.etcd.namespace`
+
+### Metrics Collected (Etcd)
+
+#### Discovery (2 datapoints)
+| Metric | Description |
+|--------|-------------|
+| `has_leader` | 1 if member sees a leader, 0 if not |
+| `is_leader` | 1 if this member is the current leader |
+
+#### Performance (13 datapoints)
+| Metric | Description |
+|--------|-------------|
+| `leader_changes` | Leader election rate (alert if > 3/sec) |
+| `proposals_committed` | Committed proposals/sec |
+| `proposals_applied` | Applied proposals/sec |
+| `proposals_pending` | Pending proposals (alert if > 100) |
+| `proposals_failed` | Failed proposals/sec (alert if > 0) |
+| `wal_fsync_p99` | WAL fsync p99 latency in ms (alert if > 15ms) |
+| `backend_commit_p99` | Backend commit p99 latency in ms (alert if > 25ms) |
+| `db_total_size` | Database size in bytes (alert if > 6GB) |
+| `db_in_use_size` | Database size in use (post-compaction) |
+| `keys_total` | Total keys in the store |
+| `peer_rtt_p99` | Peer round-trip time p99 in ms |
+| `peer_sent_bytes` | Peer sent bytes/sec |
+| `peer_received_bytes` | Peer received bytes/sec |
+
+#### Cluster Overview (8 datapoints)
+| Metric | Description |
+|--------|-------------|
+| `members_total` | Total etcd members |
+| `members_with_leader` | Members that see a leader (alert if < 3) |
+| `leaders_active` | Active leaders (alert if != 1) |
+| `total_db_size` | Aggregate database size |
+| `total_keys` | Aggregate key count |
+| `proposals_pending_total` | Aggregate pending proposals |
+| `leader_changes_total` | Aggregate leader election rate |
+| `proposals_failed_total` | Aggregate failed proposal rate |
+
+### Instance Properties (Etcd)
+
+Each discovered etcd member receives these auto-populated properties:
+
+| Property | Description | Example |
+|----------|-------------|---------|
+| `auto.etcd.pod` | Etcd pod name | `etcd-master-0.ocp.example.com` |
+| `auto.etcd.instance` | Etcd endpoint (IP:port) | `10.0.1.5:9979` |
+| `auto.etcd.namespace` | Kubernetes namespace | `openshift-etcd` |
 
 ---
 
