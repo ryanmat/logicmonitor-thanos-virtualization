@@ -1,13 +1,15 @@
-<!-- Description: Customer setup guide for KubeVirt Thanos DataSources for LogicMonitor. -->
+<!-- Description: Customer setup guide for OpenShift Thanos DataSources for LogicMonitor. -->
 <!-- Description: Covers OpenShift prerequisites, token generation, LM portal configuration, and troubleshooting. -->
 
 # OpenShift Thanos DataSources - Setup Guide
 
 This guide walks through the complete setup of LogicMonitor monitoring for
 OpenShift environments via the Thanos Querier API. The DataSources in this
-project query Thanos for KubeVirt VM metrics, etcd cluster health, and custom
-PromQL queries, allowing any LogicMonitor Collector with HTTPS access to the
-cluster to monitor OpenShift without requiring an in-cluster collector.
+project query Thanos for KubeVirt VM metrics, OCP platform health (etcd cluster
+health, operator status, API server performance, pod health, image pull health,
+ingress latency), and custom PromQL queries, allowing any LogicMonitor Collector
+with HTTPS access to the cluster to monitor OpenShift without requiring an
+in-cluster collector.
 
 For architecture details and metric documentation, see the project
 [README](../README.md).
@@ -29,12 +31,25 @@ For architecture details and metric documentation, see the project
 
 ## 1. Prerequisites
 
-### OpenShift Cluster
+### OpenShift Cluster (All Suites)
+
+These are required regardless of which DataSource suites you deploy:
 
 - OpenShift 4.12 or later (including ROSA, ARO, and self-managed)
+- `oc` CLI installed and authenticated with cluster-admin or equivalent privileges
+
+### KubeVirt Suite (Additional)
+
+These are required only if deploying the KubeVirt DataSources:
+
 - OpenShift Virtualization (CNV) operator installed and healthy
 - At least one VirtualMachineInstance (VMI) running
-- `oc` CLI installed and authenticated with cluster-admin or equivalent privileges
+
+### OCP Suite
+
+No additional prerequisites beyond the base requirements. The OCP DataSources
+monitor core OpenShift components (etcd, ClusterOperators, API server, pods,
+CRI-O image pulls, HAProxy routes) that are present on every OpenShift cluster.
 
 ### LogicMonitor
 
@@ -57,6 +72,9 @@ For architecture details and metric documentation, see the project
 ## 2. OpenShift Configuration
 
 ### 2.1 Verify OpenShift Virtualization is Installed
+
+> **Note:** This step is only required for the KubeVirt DataSource suite. Skip
+> this step if you are only deploying the OCP or PromQL suites.
 
 Confirm the CNV operator is installed and the KubeVirt custom resource is
 healthy:
@@ -150,27 +168,47 @@ The token is printed to stdout. Copy it immediately and store it securely.
 
 ### 2.6 Test the Thanos Endpoint
 
-Verify end-to-end connectivity and authentication by querying the
-`kubevirt_vmi_info` metric (the same metric the DataSources use for Active
-Discovery):
+Verify end-to-end connectivity and authentication by querying Thanos metrics.
+Which queries to test depends on the suites you plan to deploy.
 
 ```bash
 THANOS_HOST=$(oc get route thanos-querier -n openshift-monitoring -o jsonpath='{.spec.host}')
 
 # Use the token generated in the previous step
 TOKEN="<paste-your-token-here>"
+```
 
+**KubeVirt suite test** (skip if not deploying KubeVirt DataSources):
+
+```bash
 curl -sk -H "Authorization: Bearer ${TOKEN}" \
   "https://${THANOS_HOST}/api/v1/query?query=kubevirt_vmi_info" | python3 -m json.tool
 ```
 
-**Expected output:** JSON with `"status": "success"` and a `data.result` array
+Expected output: JSON with `"status": "success"` and a `data.result` array
 containing one entry per running VMI. Each entry includes labels such as
 `name`, `namespace`, `node`, and `phase`.
 
 If the result array is empty, confirm VMIs are running with `oc get vmi -A`.
 
-Optional: verify cluster-level metrics exist:
+**OCP suite tests:**
+
+```bash
+# Test OCP operator metrics
+curl -sk -H "Authorization: Bearer ${TOKEN}" \
+  "https://${THANOS_HOST}/api/v1/query?query=cluster_operator_conditions" | python3 -m json.tool
+
+# Test etcd metrics
+curl -sk -H "Authorization: Bearer ${TOKEN}" \
+  "https://${THANOS_HOST}/api/v1/query?query=etcd_server_has_leader" | python3 -m json.tool
+```
+
+Expected output for both: JSON with `"status": "success"` and a non-empty
+`data.result` array. The `cluster_operator_conditions` query returns one entry
+per operator/condition combination. The `etcd_server_has_leader` query returns
+one entry per etcd member (typically 3).
+
+**Optional:** Verify additional cluster-level metrics exist:
 
 ```bash
 curl -sk -H "Authorization: Bearer ${TOKEN}" \
@@ -198,6 +236,20 @@ not matter.
 | `KubeVirt_VMI_Network.json` | Per-VMI network throughput, packets, errors (8 datapoints) |
 | `KubeVirt_VMI_Storage.json` | Per-VMI storage throughput, IOPS, latency (8 datapoints) |
 
+**OCP Suite** (`datasources/ocp/`):
+
+| File | Description |
+|------|-------------|
+| `Etcd_Cluster_Overview.json` | Cluster-wide etcd health, member counts, consensus metrics (8 datapoints) |
+| `Etcd_Member_Discovery.json` | Etcd member discovery and leader status (2 datapoints) |
+| `Etcd_Member_Performance.json` | Per-member disk latency, proposals, db size, peer network (13 datapoints) |
+| `OCP_Operator_Health.json` | Per-operator Available, Degraded, Progressing, Upgradeable (4 datapoints) |
+| `OCP_Operator_Overview.json` | Cluster-wide operator degraded/unavailable counts (3 datapoints) |
+| `OCP_API_Server_Performance.json` | API server request rate, p99 latency, inflight, 429s (7 datapoints) |
+| `OCP_Pod_Health.json` | Cluster-wide pod failure counts by reason (7 datapoints) |
+| `OCP_Image_Pull_Health.json` | Per-node CRI-O pull rates and cluster pull failures (5 datapoints) |
+| `OCP_Ingress_Latency.json` | Per-route HAProxy request rate, latency, errors (6 datapoints) |
+
 **PromQL Collector** (`datasources/promql/`):
 
 | File | Description |
@@ -210,10 +262,12 @@ not matter.
 2. Navigate to **Settings > DataSources**
 3. Click **Add > Import**
 4. Select a JSON file and click **Import**
-5. Repeat for all 6 files
+5. Repeat for each file in the suites you are deploying (6 for KubeVirt, 9 for
+   OCP, 1 for PromQL)
 
-All DataSources will appear under the **KubeVirt** group in the DataSource
-list.
+KubeVirt DataSources appear under the **KubeVirt** group, OCP DataSources
+appear under the **OCP** and **Etcd** groups, and the PromQL Collector appears
+under the **PromQL** group in the DataSource list.
 
 ### 3.2 Create the Monitoring Device
 
@@ -222,8 +276,8 @@ list.
    - **Name / Hostname**: The Thanos Querier route hostname from
      [Section 2.2](#22-get-the-thanos-querier-route)
      (e.g., `thanos-querier-openshift-monitoring.apps.cluster.example.com`)
-   - **Display Name**: A descriptive name such as `OCP-Prod-KubeVirt` or
-     `<cluster-name>-kubevirt`
+   - **Display Name**: A descriptive name such as `OCP-Prod-Thanos` or
+     `<cluster-name>-thanos`
    - **Collector**: Select the Collector that has network access to the Thanos
      route
    - **Host Group**: Place in an appropriate resource group
@@ -241,7 +295,7 @@ property.
 | `openshift.thanos.port` | No | `443` | Only set if using a non-standard port |
 | `openshift.thanos.ssl` | No | `true` | Set to `false` only if Thanos is not behind TLS |
 
-Once both required properties are set, all 6 DataSources automatically attach
+Once both required properties are set, all DataSources automatically attach
 to the device via the `appliesTo` expression:
 `openshift.thanos.host && openshift.thanos.pass`.
 
@@ -250,13 +304,30 @@ to the device via the `appliesTo` expression:
 Active Discovery runs every 15 minutes. To trigger it immediately:
 
 1. Navigate to the device in LogicMonitor
-2. Under the **DataSources** tab, you should see 6 KubeVirt DataSources listed
-3. Click on any DataSource (e.g., **KubeVirt VMI Discovery**)
+2. Under the **DataSources** tab, you should see DataSources listed for each
+   suite you imported
+3. Click on any DataSource (e.g., **KubeVirt VMI Discovery** or **OCP Operator
+   Health**)
 4. Click the gear icon and select **Run Active Discovery**
 
 Within 1-2 minutes, instances appear:
+
+**KubeVirt DataSources:**
 - **VMI DataSources**: One instance per running VMI, grouped by namespace
 - **Cluster Overview**: A single `cluster` instance
+
+**OCP DataSources:**
+- **OCP_Operator_Health**: One instance per ClusterOperator (~30-35 operators on
+  a standard OpenShift cluster)
+- **OCP_API_Server_Performance**: A single static `apiserver` instance
+- **OCP_Operator_Overview**: A single static `cluster` instance
+- **OCP_Pod_Health**: A single static `cluster` instance
+- **OCP_Image_Pull_Health**: One instance per node plus a `cluster` aggregate
+  instance
+- **OCP_Ingress_Latency**: One instance per HAProxy route, grouped by namespace
+- **Etcd_Member_Discovery / Etcd_Member_Performance**: One instance per etcd
+  member (typically 3)
+- **Etcd_Cluster_Overview**: A single `etcd-cluster` instance
 
 ### 3.5 Verify Data Collection
 
@@ -385,6 +456,32 @@ On standalone KubeVirt installations without HCO, the `system_health` datapoint
 returns 0. This is expected behavior -- the DataSource handles missing metrics
 gracefully using `or vector(0)` fallbacks.
 
+### No OCP Operators Discovered
+
+The `cluster_operator_conditions` metric is OpenShift-specific. The
+OCP_Operator_Health DataSource does not work on vanilla Kubernetes or managed
+K8s services (EKS, AKS, GKE) without the OpenShift control plane.
+
+### Image Pull Health Shows 0 Instances
+
+The `container_runtime_crio_image_pulls_success_total` metric requires CRI-O as
+the container runtime. Clusters using containerd (common on non-OpenShift
+distributions) will not have this metric. All standard OpenShift clusters use
+CRI-O.
+
+### Ingress Latency Shows 0 Instances
+
+The `haproxy_server_up` metric is specific to the OpenShift HAProxy router.
+Clusters using nginx-ingress or other ingress controllers will not expose
+HAProxy metrics via Thanos. The default OpenShift router uses HAProxy, so this
+DataSource works on standard OpenShift installations.
+
+### Pod Health Shows All Zeros
+
+This is normal on a healthy cluster. The OCP_Pod_Health DataSource counts pods
+in error states (CrashLoopBackOff, ImagePullBackOff, OOMKilled, etc.). Zero
+values mean no pods are currently in those states.
+
 ### SSL/TLS Errors
 
 The DataSource scripts accept all TLS certificates to accommodate self-signed
@@ -407,6 +504,8 @@ To enable debug logging for the Groovy collection scripts:
 
 ## Appendix A: DataSource Reference
 
+**KubeVirt Suite:**
+
 | File | Display Name | Collection | Discovery | Instances | Datapoints |
 |------|-------------|------------|-----------|-----------|------------|
 | `KubeVirt_Cluster_Overview.json` | KubeVirt Cluster Overview | 1 min | 15 min | 1 (cluster) | 11 |
@@ -416,17 +515,40 @@ To enable debug logging for the Groovy collection scripts:
 | `KubeVirt_VMI_Network.json` | KubeVirt VMI Network | 1 min | 15 min | Per VMI | 8 |
 | `KubeVirt_VMI_Storage.json` | KubeVirt VMI Storage | 1 min | 15 min | Per VMI | 8 |
 
-**Total: 44 datapoints across 6 DataSources**
+**OCP Suite:**
+
+| File | Display Name | Collection | Discovery | Instances | Datapoints |
+|------|-------------|------------|-----------|-----------|------------|
+| `Etcd_Cluster_Overview.json` | Etcd Cluster Overview | 1 min | 15 min | 1 (cluster) | 8 |
+| `Etcd_Member_Discovery.json` | Etcd Member Discovery | 1 min | 15 min | Per member | 2 |
+| `Etcd_Member_Performance.json` | Etcd Member Performance | 1 min | 15 min | Per member | 13 |
+| `OCP_Operator_Health.json` | OCP Operator Health | 1 min | 15 min | Per operator | 4 |
+| `OCP_Operator_Overview.json` | OCP Operator Overview | 1 min | 15 min | 1 (cluster) | 3 |
+| `OCP_API_Server_Performance.json` | OCP API Server Performance | 1 min | 15 min | 1 (apiserver) | 7 |
+| `OCP_Pod_Health.json` | OCP Pod Health | 1 min | 15 min | 1 (cluster) | 7 |
+| `OCP_Image_Pull_Health.json` | OCP Image Pull Health | 1 min | 15 min | Per node + 1 | 5 |
+| `OCP_Ingress_Latency.json` | OCP Ingress Latency | 1 min | 15 min | Per route | 6 |
+
+**PromQL Collector:**
+
+| File | Display Name | Collection | Discovery | Instances | Datapoints |
+|------|-------------|------------|-----------|-----------|------------|
+| `Thanos_PromQL_Collector.json` | Thanos PromQL Collector | 1 min | 15 min | Per query | 2 |
+
+**Total: 99 datapoints across 16 DataSources** (44 KubeVirt + 55 OCP)
 
 All DataSources use:
 - `appliesTo`: `openshift.thanos.host && openshift.thanos.pass`
 - `collectionMethod`: `script` (Groovy)
-- `group`: `KubeVirt`
-- Instance Level Property (ILP) grouping by `auto.vmi.namespace`
+- `group`: `KubeVirt` (KubeVirt suite), `OCP` or `Etcd` (OCP suite), `PromQL`
+  (PromQL Collector)
+- Instance Level Property (ILP) grouping varies by suite (see Appendix B)
 
 ---
 
 ## Appendix B: Instance Level Properties
+
+### KubeVirt Instance Properties
 
 Each VMI instance discovered by Active Discovery receives the following
 auto-populated properties:
@@ -437,6 +559,22 @@ auto-populated properties:
 | `auto.vmi.namespace` | Kubernetes namespace (used for ILP grouping) | `default` |
 | `auto.vmi.node` | Node where the VMI is scheduled | `worker-0.ocp.example.com` |
 | `auto.vmi.phase` | VMI lifecycle phase (Discovery DS only) | `running` |
+
+### OCP Instance Properties
+
+OCP DataSource instances receive the following auto-populated properties
+depending on the DataSource:
+
+| Property | Description | Example |
+|----------|-------------|---------|
+| `auto.operator.name` | ClusterOperator name | `authentication` |
+| `auto.etcd.pod` | Etcd pod name | `etcd-master-0` |
+| `auto.etcd.instance` | Etcd endpoint (IP:port) | `10.0.1.5:9979` |
+| `auto.etcd.namespace` | Etcd namespace | `openshift-etcd` |
+| `auto.node.instance` | CRI-O node instance endpoint | `10.1.14.10:9637` |
+| `auto.node.name` | Node hostname | `ip-10-55-117-247.us-west-2.compute.internal` |
+| `auto.route.name` | HAProxy route name | `console` |
+| `auto.route.namespace` | Route namespace (used for ILP grouping) | `openshift-console` |
 
 These properties can be used in LogicMonitor for filtering, alerting, and
 dashboard widgets.

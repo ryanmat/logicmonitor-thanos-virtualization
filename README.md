@@ -9,8 +9,8 @@ LogicMonitor DataSource suite for monitoring OpenShift environments via the Than
 
 | Suite | DataSources | Datapoints | Directory | Purpose |
 |-------|-------------|------------|-----------|---------|
+| **OCP** | 9 | 55 (23 etcd + 32 OCP) | `datasources/ocp/` | Monitor OCP platform: etcd health, operator status, API server performance, pod health, image pulls, ingress latency |
 | **KubeVirt** | 6 | 44 | `datasources/kubevirt/` | Monitor OpenShift Virtualization VMs |
-| **Etcd** | 3 | 23 | `datasources/etcd/` | Monitor etcd cluster health, disk, and network |
 | **Thanos PromQL Collector** | 1 | 2 | `datasources/promql/` | Run arbitrary PromQL queries |
 
 All suites use unified connection properties: `openshift.thanos.host` and `openshift.thanos.pass`. One device represents one cluster's Thanos Querier endpoint.
@@ -24,61 +24,64 @@ All suites use unified connection properties: `openshift.thanos.host` and `opens
 | `openshift.thanos.port` | No | 443 | Thanos Querier port |
 | `openshift.thanos.ssl` | No | true | Use HTTPS |
 
-## Architecture (KubeVirt Suite)
+## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                     OpenShift/ROSA Cluster                          │
-│                                                                     │
-│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐            │
-│  │   KubeVirt  │    │   KubeVirt  │    │   KubeVirt  │            │
-│  │    VMI 1    │    │    VMI 2    │    │    VMI N    │            │
-│  └──────┬──────┘    └──────┬──────┘    └──────┬──────┘            │
-│         │                  │                  │                    │
-│         ▼                  ▼                  ▼                    │
-│  ┌─────────────────────────────────────────────────────┐          │
-│  │              virt-handler (per node)                 │          │
-│  │         Exposes kubevirt_vmi_* metrics              │          │
-│  └──────────────────────┬──────────────────────────────┘          │
-│                         │ scrape                                   │
-│                         ▼                                          │
-│  ┌─────────────────────────────────────────────────────┐          │
-│  │                   Prometheus                         │          │
-│  │            (openshift-monitoring namespace)          │          │
-│  │         Stores metrics in local TSDB                │          │
-│  └──────────────────────┬──────────────────────────────┘          │
-│                         │                                          │
-│                         ▼                                          │
-│  ┌─────────────────────────────────────────────────────┐          │
-│  │               Thanos Querier                         │          │
-│  │    thanos-querier.openshift-monitoring.svc          │          │
-│  │                                                      │          │
-│  │  - Provides PromQL API (/api/v1/query)              │          │
-│  │  - Aggregates data from Prometheus instances        │          │
-│  │  - Handles deduplication                            │          │
-│  └──────────────────────┬──────────────────────────────┘          │
-│                         │                                          │
-└─────────────────────────┼──────────────────────────────────────────┘
-                          │ HTTPS (port 443)
-                          │ External Route
-                          │
-                          ▼
-              ┌───────────────────────┐
-              │   LogicMonitor        │
-              │   Collector           │
-              │                       │
-              │  Groovy Scripts:      │
-              │  - Discovery          │
-              │  - CPU metrics        │
-              │  - Memory metrics     │
-              │  - Network metrics    │
-              │  - Storage metrics    │
-              └───────────────────────┘
++---------------------------------------------------------------------------+
+|                     OpenShift/ROSA Cluster                                |
+|                                                                           |
+|  +-------------+    +-------------+    +-------------+                   |
+|  |   KubeVirt  |    |   etcd      |    |  OCP        |                   |
+|  |    VMIs     |    |   members   |    |  operators  |                   |
+|  +------+------+    +------+------+    +------+------+                   |
+|         |                  |                  |                           |
+|         v                  v                  v                           |
+|  +---------------------------------------------------------+             |
+|  |              virt-handler / kube-state / etcd            |             |
+|  |         Expose kubevirt, etcd, OCP platform metrics     |             |
+|  +----------------------------+----------------------------+             |
+|                               | scrape                                   |
+|                               v                                          |
+|  +---------------------------------------------------------+             |
+|  |                   Prometheus                             |             |
+|  |            (openshift-monitoring namespace)              |             |
+|  |         Stores metrics in local TSDB                    |             |
+|  +----------------------------+----------------------------+             |
+|                               |                                          |
+|                               v                                          |
+|  +---------------------------------------------------------+             |
+|  |               Thanos Querier                             |             |
+|  |    thanos-querier.openshift-monitoring.svc              |             |
+|  |                                                          |             |
+|  |  - Provides PromQL API (/api/v1/query)                  |             |
+|  |  - Aggregates data from Prometheus instances            |             |
+|  |  - Handles deduplication                                |             |
+|  +----------------------------+----------------------------+             |
+|                               |                                          |
++-------------------------------+------------------------------------------+
+                                | HTTPS (port 443)
+                                | External Route
+                                |
+                                v
+                    +-----------------------+
+                    |   LogicMonitor        |
+                    |   Collector           |
+                    |                       |
+                    |  Groovy Scripts:      |
+                    |  - KubeVirt VMI       |
+                    |  - Etcd health        |
+                    |  - OCP operators      |
+                    |  - OCP API server     |
+                    |  - OCP pod health     |
+                    |  - OCP image pulls    |
+                    |  - OCP ingress        |
+                    |  - PromQL collector   |
+                    +-----------------------+
 ```
 
 ### How It Works
 
-1. **KubeVirt virt-handler** runs on each node and exposes Prometheus metrics for each VM
+1. **Metric exporters** (virt-handler, etcd, kube-state-metrics, HAProxy) expose Prometheus metrics on each node or pod
 2. **Prometheus** (OpenShift Monitoring Stack) scrapes these metrics every 30 seconds
 3. **Thanos Querier** provides a unified PromQL API endpoint for querying metrics
 4. **LogicMonitor DataSources** query Thanos via HTTPS using a service account token
@@ -156,6 +159,8 @@ Each discovered VMI receives these auto-populated properties:
 
 Monitors OpenShift etcd cluster health via the same Thanos Querier endpoint. Etcd metrics are always available on OpenShift clusters since etcd is a core control plane component. No additional service account permissions are needed beyond `cluster-monitoring-view`.
 
+DataSource files are located in `datasources/ocp/` alongside the OCP platform DataSources.
+
 ### DataSource Inventory
 
 | DataSource | Instances | Collection | Discovery | Datapoints | Description |
@@ -220,6 +225,100 @@ Each discovered etcd member receives these auto-populated properties:
 
 ---
 
+## OCP Platform DataSources (6)
+
+Monitors OpenShift platform health: operator status, API server performance, pod failure states, image pull reliability, and ingress latency. All metrics come from standard OpenShift components (kube-state-metrics, apiserver, CRI-O, HAProxy) exposed through the Thanos Querier.
+
+DataSource files are located in `datasources/ocp/` alongside the Etcd DataSources.
+
+### DataSource Inventory
+
+| DataSource | Instances | Collection | Discovery | Datapoints | Description |
+|------------|-----------|------------|-----------|------------|-------------|
+| OCP_Operator_Health | Per operator (~30-35) | 1 min | 15 min | 4 | Per-operator Available, Degraded, Progressing, Upgradeable conditions |
+| OCP_Operator_Overview | 1 (cluster) | 1 min | 15 min | 3 | Cluster-wide operator degraded/unavailable counts |
+| OCP_API_Server_Performance | 1 (apiserver) | 1 min | 15 min | 7 | API server request rate, p99 latency, inflight, 429s, terminations |
+| OCP_Pod_Health | 1 (cluster) | 1 min | 15 min | 7 | Cluster-wide pod failure counts by reason |
+| OCP_Image_Pull_Health | Per node + 1 cluster | 1 min | 15 min | 5 | Per-node CRI-O pull rates and cluster pull failure counts |
+| OCP_Ingress_Latency | Per route | 1 min | 15 min | 6 | Per-route HAProxy request rate, latency, errors, backend status |
+
+**Total: 32 datapoints across 6 DataSources.**
+
+All OCP DataSources use:
+- **appliesTo**: `openshift.thanos.host && openshift.thanos.pass`
+- **Group**: `OCP`
+- No additional prerequisites beyond the standard Thanos service account
+
+### Metrics Collected (OCP)
+
+#### Operator Health (4 datapoints)
+| Metric | Description |
+|--------|-------------|
+| `available` | 1 if operator Available condition is true (alert if < 1) |
+| `degraded` | 1 if operator Degraded condition is true (alert if > 0) |
+| `progressing` | 1 if operator Progressing condition is true |
+| `upgradeable` | 1 if operator Upgradeable condition is true |
+
+#### Operator Overview (3 datapoints)
+| Metric | Description |
+|--------|-------------|
+| `operators_degraded` | Count of operators with Degraded=true (alert if > 0) |
+| `operators_unavailable` | Count of operators with Available=false (alert if > 0) |
+| `operators_total` | Total number of ClusterOperators |
+
+#### API Server Performance (7 datapoints)
+| Metric | Description |
+|--------|-------------|
+| `request_rate` | Total API requests per second |
+| `error_rate_5xx` | 5xx responses per second (alert if > 10) |
+| `p99_latency_ms` | Request latency p99 in ms, excludes WATCH (alert if > 2000) |
+| `inflight_mutating` | Current in-flight mutating requests (alert if > 400) |
+| `inflight_readonly` | Current in-flight read-only requests (alert if > 600) |
+| `rate_limited_429` | Rate-limited 429 responses per second (alert if > 0) |
+| `terminated_requests` | Terminated requests per second (alert if > 0) |
+
+#### Pod Health (7 datapoints)
+| Metric | Description |
+|--------|-------------|
+| `pods_crashloopbackoff` | Pods in CrashLoopBackOff state (alert if > 0) |
+| `pods_imagepullbackoff` | Pods in ImagePullBackOff state (alert if > 0) |
+| `pods_errimagepull` | Pods in ErrImagePull state (alert if > 0) |
+| `pods_oomkilled` | Pods with OOMKilled last termination (alert if > 0) |
+| `pods_pending` | Pods in Pending phase (alert if > 5) |
+| `pods_failed` | Pods in Failed phase (alert if > 0) |
+| `pods_createcontainererror` | Pods in CreateContainerConfigError state (alert if > 0) |
+
+#### Image Pull Health (5 datapoints)
+| Metric | Description |
+|--------|-------------|
+| `pull_success_rate` | Image pulls succeeded per second (per-node) |
+| `pull_failure_rate` | Image pulls failed per second (per-node, alert if > 0) |
+| `pull_duration_p99_ms` | Image pull duration p99 in ms (per-node, alert if > 30000) |
+| `cluster_pull_failures` | Total pull failures per second cluster-wide (alert if > 0) |
+| `cluster_imagepullbackoff` | Pods in ImagePullBackOff state cluster-wide (alert if > 0) |
+
+#### Ingress Latency (6 datapoints)
+| Metric | Description |
+|--------|-------------|
+| `request_rate` | Total requests per second for this route |
+| `error_rate_5xx` | 5xx responses per second (alert if > 10) |
+| `response_time_avg_ms` | Average backend response time in ms (alert if > 5000) |
+| `connection_errors` | Backend connection errors per second (alert if > 0) |
+| `backend_up` | Backend server status, 1=up 0=down (alert if < 1) |
+| `active_sessions` | Current active sessions for this route |
+
+### Instance Properties (OCP)
+
+| Property | Description | Example |
+|----------|-------------|---------|
+| `auto.operator.name` | ClusterOperator name | `authentication` |
+| `auto.node.instance` | CRI-O node instance endpoint | `10.1.14.10:9637` |
+| `auto.node.name` | Node hostname | `ip-10-55-117-247.us-west-2.compute.internal` |
+| `auto.route.name` | HAProxy route name | `console` |
+| `auto.route.namespace` | Route namespace (ILP grouping) | `openshift-console` |
+
+---
+
 ## Thanos PromQL Collector (1)
 
 A generic, configurable DataSource that executes arbitrary PromQL queries against any Thanos endpoint. Queries are defined entirely through device properties, so no code changes are needed to add new metrics.
@@ -269,8 +368,9 @@ Active Discovery creates two instances (`etcd_db_size` and `api_request_rate`), 
 
 ## Prerequisites
 
-- OpenShift 4.12+ with OpenShift Virtualization (KubeVirt/CNV) installed (for KubeVirt suite)
-- Any Thanos Querier endpoint accessible over HTTPS (for PromQL Collector)
+- **OCP suite (etcd + platform)**: OpenShift 4.12+ (any cluster, KubeVirt/CNV not required)
+- **KubeVirt suite**: OpenShift 4.12+ with OpenShift Virtualization (KubeVirt/CNV) installed
+- **PromQL Collector**: Any Thanos Querier endpoint accessible over HTTPS
 - LogicMonitor Collector with network access to the Thanos endpoint
 - Service account with monitoring read access (recommended: dedicated `logicmonitor-thanos-reader` SA)
 
@@ -401,6 +501,29 @@ Ensure `kubevirt_vmi_info` metric exists in Thanos:
 ```bash
 curl -k -H "Authorization: Bearer $TOKEN" \
   "https://$THANOS_HOST/api/v1/query?query=kubevirt_vmi_info" | jq '.data.result[].metric.name'
+```
+
+### No Operators Discovered (OCP_Operator_Health)
+
+Verify that the `cluster_operator_conditions` metric exists in Thanos:
+```bash
+curl -k -H "Authorization: Bearer $TOKEN" \
+  "https://$THANOS_HOST/api/v1/query?query=cluster_operator_conditions"
+```
+This metric is only available on OpenShift clusters. Vanilla Kubernetes or managed K8s services without the OpenShift ClusterOperator CRD will not have this metric.
+
+### Image Pull Health Shows 0 Instances
+
+The `container_runtime_crio_image_pulls_success_total` metric is CRI-O specific. If the cluster uses containerd or another container runtime, this DataSource will not discover any instances. Verify the runtime:
+```bash
+oc get nodes -o jsonpath='{.items[0].status.nodeInfo.containerRuntimeVersion}'
+```
+
+### Ingress Latency Shows 0 Instances
+
+The `haproxy_server_up` metric is specific to the OpenShift HAProxy router. Clusters using a different ingress controller (nginx, Traefik, etc.) will not have this metric. Verify the router type:
+```bash
+oc get pods -n openshift-ingress -o jsonpath='{.items[0].metadata.labels.ingresscontroller\.operator\.openshift\.io/deployment-ingresscontroller}'
 ```
 
 ## License
