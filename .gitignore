@@ -1,4 +1,4 @@
-# Description: Git ignore file for KubeVirt Thanos DataSources project.
+# Description: Git ignore file for LogicMonitor Thanos DataSource Suite.
 # Description: Excludes internal docs, credentials, IDE files, and LLM-generated content.
 
 # Internal planning documents (per CLAUDE.md - docs/ is for internal planning only)
