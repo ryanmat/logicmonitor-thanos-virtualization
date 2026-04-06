@@ -110,7 +110,7 @@
   "searchKeywords": "acm,openshift,advanced-cluster-management,managed,cluster,status,health",
   "displayedAs": "ACM Managed Cluster Status",
   "description": "Discovers managed clusters and monitors availability, join status, hub acceptance, and worker capacity via Thanos Querier",
-  "appliesTo": "openshift.thanos.host && openshift.thanos.pass",
+  "appliesTo": "hasCategory(\"OpenShift_ACM\")",
   "activeDiscovery": {
     "groupExpr": "auto.cluster.cloud",
     "deleteInactiveInstances": true,

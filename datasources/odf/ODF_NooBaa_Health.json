@@ -109,7 +109,7 @@
   "searchKeywords": "odf,noobaa,openshift,storage,mcg,s3,object,buckets",
   "displayedAs": "ODF NooBaa Health",
   "description": "NooBaa Multi-Cloud Gateway health, bucket counts, and storage usage via Thanos Querier",
-  "appliesTo": "openshift.thanos.host && openshift.thanos.pass",
+  "appliesTo": "hasCategory(\"OpenShift_ODF\")",
   "activeDiscovery": {
     "groupExpr": "",
     "deleteInactiveInstances": false,

@@ -75,7 +75,7 @@
   "searchKeywords": "odf,ceph,openshift,storage,monitor,quorum,health",
   "displayedAs": "ODF Ceph Monitor Health",
   "description": "Per-monitor quorum status, leader elections, and store health via Thanos Querier",
-  "appliesTo": "openshift.thanos.host && openshift.thanos.pass",
+  "appliesTo": "hasCategory(\"OpenShift_ODF\")",
   "activeDiscovery": {
     "groupExpr": "",
     "deleteInactiveInstances": true,

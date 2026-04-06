@@ -147,7 +147,7 @@
   "searchKeywords": "acm,openshift,advanced-cluster-management,observability,thanos,health",
   "displayedAs": "ACM Observability Health",
   "description": "Monitors the ACM Observability Thanos stack health including query, receive, store, and compactor components via Thanos Querier",
-  "appliesTo": "openshift.thanos.host && openshift.thanos.pass",
+  "appliesTo": "hasCategory(\"OpenShift_ACM\")",
   "activeDiscovery": {
     "groupExpr": "",
     "deleteInactiveInstances": false,

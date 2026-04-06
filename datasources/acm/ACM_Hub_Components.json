@@ -110,7 +110,7 @@
   "searchKeywords": "acm,openshift,advanced-cluster-management,hub,deployment,health",
   "displayedAs": "ACM Hub Components",
   "description": "Discovers ACM hub deployments and monitors replica health, availability, and container restarts via Thanos Querier",
-  "appliesTo": "openshift.thanos.host && openshift.thanos.pass",
+  "appliesTo": "hasCategory(\"OpenShift_ACM\")",
   "activeDiscovery": {
     "groupExpr": "auto.deploy.namespace",
     "deleteInactiveInstances": true,

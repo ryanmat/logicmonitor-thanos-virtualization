@@ -94,7 +94,7 @@
   "searchKeywords": "acm,openshift,advanced-cluster-management,controller,reconcile,workqueue",
   "displayedAs": "ACM Controller Health",
   "description": "Discovers ACM controllers and monitors reconciliation rates, errors, latency, and work queue depth via Thanos Querier",
-  "appliesTo": "openshift.thanos.host && openshift.thanos.pass",
+  "appliesTo": "hasCategory(\"OpenShift_ACM\")",
   "activeDiscovery": {
     "groupExpr": "",
     "deleteInactiveInstances": true,

@@ -77,7 +77,7 @@
   "searchKeywords": "odf,ceph,openshift,storage,rook,operator,health,overview",
   "displayedAs": "ODF Rook Operator Health",
   "description": "Rook-Ceph operator-level health summary including OSD and monitor status via Thanos Querier",
-  "appliesTo": "openshift.thanos.host && openshift.thanos.pass",
+  "appliesTo": "hasCategory(\"OpenShift_ODF\")",
   "activeDiscovery": {
     "groupExpr": "",
     "deleteInactiveInstances": false,

@@ -40,7 +40,7 @@
   "searchKeywords": "etcd,openshift,leader,health,discovery",
   "displayedAs": "Etcd Member Discovery",
   "description": "Discovers etcd cluster members and monitors leader status via Thanos Querier",
-  "appliesTo": "openshift.thanos.host && openshift.thanos.pass",
+  "appliesTo": "hasCategory(\"OpenShift_Etcd\")",
   "activeDiscovery": {
     "groupExpr": "auto.etcd.namespace",
     "deleteInactiveInstances": true,

@@ -145,7 +145,7 @@
   "searchKeywords": "vmi,virtualization,openshift,kubevirt,throughput,network",
   "displayedAs": "KubeVirt VMI Network",
   "description": "Network metrics for KubeVirt Virtual Machine Instances via Thanos Querier",
-  "appliesTo": "openshift.thanos.host && openshift.thanos.pass",
+  "appliesTo": "hasCategory(\"OpenShift_KubeVirt\")",
   "activeDiscovery": {
     "groupExpr": "auto.vmi.namespace",
     "deleteInactiveInstances": true,

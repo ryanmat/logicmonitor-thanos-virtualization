@@ -232,7 +232,7 @@
   "searchKeywords": "etcd,openshift,latency,wal,fsync,proposals,consensus,network",
   "displayedAs": "Etcd Member Performance",
   "description": "Disk latency, consensus, and network metrics for etcd cluster members via Thanos Querier",
-  "appliesTo": "openshift.thanos.host && openshift.thanos.pass",
+  "appliesTo": "hasCategory(\"OpenShift_Etcd\")",
   "activeDiscovery": {
     "groupExpr": "auto.etcd.namespace",
     "deleteInactiveInstances": true,

@@ -23,7 +23,7 @@
   "searchKeywords": "vmi,virtualization,discovery,openshift,kubevirt,status",
   "displayedAs": "KubeVirt VMI Discovery",
   "description": "Discovers and monitors KubeVirt Virtual Machine Instances (VMIs) via Thanos Querier",
-  "appliesTo": "openshift.thanos.host && openshift.thanos.pass",
+  "appliesTo": "hasCategory(\"OpenShift_KubeVirt\")",
   "activeDiscovery": {
     "groupExpr": "auto.vmi.namespace",
     "deleteInactiveInstances": true,

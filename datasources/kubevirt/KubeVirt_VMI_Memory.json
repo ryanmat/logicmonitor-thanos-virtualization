@@ -176,7 +176,7 @@
   "searchKeywords": "vmi,memory,virtualization,swap,openshift,kubevirt",
   "displayedAs": "KubeVirt VMI Memory",
   "description": "Memory metrics for KubeVirt Virtual Machine Instances via Thanos Querier",
-  "appliesTo": "openshift.thanos.host && openshift.thanos.pass",
+  "appliesTo": "hasCategory(\"OpenShift_KubeVirt\")",
   "activeDiscovery": {
     "groupExpr": "auto.vmi.namespace",
     "deleteInactiveInstances": true,

@@ -58,7 +58,7 @@
   "searchKeywords": "openshift,ocp,operator,overview,cluster,degraded,unavailable",
   "displayedAs": "OCP Operator Overview",
   "description": "Cluster-wide ClusterOperator health counts via Thanos Querier",
-  "appliesTo": "openshift.thanos.host && openshift.thanos.pass",
+  "appliesTo": "hasCategory(\"OpenShift_OCP\")",
   "activeDiscovery": {
     "groupExpr": "",
     "deleteInactiveInstances": false,

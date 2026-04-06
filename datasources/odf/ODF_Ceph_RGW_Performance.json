@@ -110,7 +110,7 @@
   "searchKeywords": "odf,ceph,openshift,storage,rgw,rados,gateway,s3,performance",
   "displayedAs": "ODF Ceph RGW Performance",
   "description": "Per-RGW daemon request rate, throughput, and latency metrics via Thanos Querier",
-  "appliesTo": "openshift.thanos.host && openshift.thanos.pass",
+  "appliesTo": "hasCategory(\"OpenShift_ODF\")",
   "activeDiscovery": {
     "groupExpr": "",
     "deleteInactiveInstances": true,

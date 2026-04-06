@@ -75,7 +75,7 @@
   "searchKeywords": "odf,ceph,openshift,storage,osd,discovery,status",
   "displayedAs": "ODF Ceph OSD Discovery",
   "description": "Discovers Ceph OSD daemons and monitors up/in status and capacity via Thanos Querier",
-  "appliesTo": "openshift.thanos.host && openshift.thanos.pass",
+  "appliesTo": "hasCategory(\"OpenShift_ODF\")",
   "activeDiscovery": {
     "groupExpr": "auto.osd.device_class",
     "deleteInactiveInstances": true,

@@ -145,7 +145,7 @@
   "searchKeywords": "etcd,openshift,cluster,health,overview",
   "displayedAs": "Etcd Cluster Overview",
   "description": "Cluster-wide etcd health, member counts, and aggregate consensus metrics via Thanos Querier",
-  "appliesTo": "openshift.thanos.host && openshift.thanos.pass",
+  "appliesTo": "hasCategory(\"OpenShift_Etcd\")",
   "activeDiscovery": {
     "groupExpr": "",
     "deleteInactiveInstances": false,

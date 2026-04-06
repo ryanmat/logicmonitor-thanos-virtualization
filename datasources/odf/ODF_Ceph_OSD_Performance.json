@@ -145,7 +145,7 @@
   "searchKeywords": "odf,ceph,openshift,storage,osd,performance,latency,iops",
   "displayedAs": "ODF Ceph OSD Performance",
   "description": "Per-OSD latency, IOPS, throughput, and utilization metrics via Thanos Querier",
-  "appliesTo": "openshift.thanos.host && openshift.thanos.pass",
+  "appliesTo": "hasCategory(\"OpenShift_ODF\")",
   "activeDiscovery": {
     "groupExpr": "auto.osd.device_class",
     "deleteInactiveInstances": true,

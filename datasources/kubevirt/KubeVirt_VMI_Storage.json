@@ -143,7 +143,7 @@
   "searchKeywords": "vmi,virtualization,openshift,latency,iops,kubevirt,storage",
   "displayedAs": "KubeVirt VMI Storage",
   "description": "Storage metrics for KubeVirt Virtual Machine Instances via Thanos Querier",
-  "appliesTo": "openshift.thanos.host && openshift.thanos.pass",
+  "appliesTo": "hasCategory(\"OpenShift_KubeVirt\")",
   "activeDiscovery": {
     "groupExpr": "auto.vmi.namespace",
     "deleteInactiveInstances": true,

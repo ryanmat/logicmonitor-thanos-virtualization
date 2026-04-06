@@ -131,7 +131,7 @@
   "searchKeywords": "openshift,ocp,pod,health,crashloop,imagepull,oomkilled,pending,failed",
   "displayedAs": "OCP Pod Health",
   "description": "Cluster-wide pod health status counts for CrashLoopBackOff, ImagePullBackOff, OOMKilled, and more via Thanos Querier",
-  "appliesTo": "openshift.thanos.host && openshift.thanos.pass",
+  "appliesTo": "hasCategory(\"OpenShift_OCP\")",
   "activeDiscovery": {
     "groupExpr": "",
     "deleteInactiveInstances": false,

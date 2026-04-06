@@ -142,7 +142,7 @@
   "searchKeywords": "odf,ceph,openshift,storage,pool,performance,iops,capacity",
   "displayedAs": "ODF Ceph Pool Performance",
   "description": "Per-pool capacity, IOPS, throughput, and object count metrics via Thanos Querier",
-  "appliesTo": "openshift.thanos.host && openshift.thanos.pass",
+  "appliesTo": "hasCategory(\"OpenShift_ODF\")",
   "activeDiscovery": {
     "groupExpr": "",
     "deleteInactiveInstances": true,

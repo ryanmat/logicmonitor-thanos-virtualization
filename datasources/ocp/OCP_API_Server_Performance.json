@@ -130,7 +130,7 @@
   "searchKeywords": "openshift,ocp,apiserver,latency,performance,requests,errors,inflight",
   "displayedAs": "OCP API Server Performance",
   "description": "Kubernetes API server request rate, latency, and error metrics via Thanos Querier",
-  "appliesTo": "openshift.thanos.host && openshift.thanos.pass",
+  "appliesTo": "hasCategory(\"OpenShift_OCP\")",
   "activeDiscovery": {
     "groupExpr": "",
     "deleteInactiveInstances": false,

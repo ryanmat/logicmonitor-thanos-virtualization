@@ -127,7 +127,7 @@
   "searchKeywords": "acm,openshift,advanced-cluster-management,hub,fleet,overview,cluster",
   "displayedAs": "ACM Hub Overview",
   "description": "Fleet-level ACM hub health including managed cluster counts, availability, worker capacity, and hub controller health via Thanos Querier",
-  "appliesTo": "openshift.thanos.host && openshift.thanos.pass",
+  "appliesTo": "hasCategory(\"OpenShift_ACM\")",
   "activeDiscovery": {
     "groupExpr": "",
     "deleteInactiveInstances": false,

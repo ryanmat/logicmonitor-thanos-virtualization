@@ -111,7 +111,7 @@
   "searchKeywords": "openshift,ocp,ingress,haproxy,route,latency,errors,response",
   "displayedAs": "OCP Ingress Latency",
   "description": "Per-route HAProxy ingress request rate, latency, and error metrics via Thanos Querier",
-  "appliesTo": "openshift.thanos.host && openshift.thanos.pass",
+  "appliesTo": "hasCategory(\"OpenShift_OCP\")",
   "activeDiscovery": {
     "groupExpr": "auto.route.namespace",
     "deleteInactiveInstances": true,

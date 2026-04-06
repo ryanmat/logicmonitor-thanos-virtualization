@@ -94,7 +94,7 @@
   "searchKeywords": "openshift,ocp,image,pull,crio,failure,imagepullbackoff,node",
   "displayedAs": "OCP Image Pull Health",
   "description": "Per-node CRI-O image pull rates and cluster-wide pull failure counts via Thanos Querier",
-  "appliesTo": "openshift.thanos.host && openshift.thanos.pass",
+  "appliesTo": "hasCategory(\"OpenShift_OCP\")",
   "activeDiscovery": {
     "groupExpr": "",
     "deleteInactiveInstances": true,

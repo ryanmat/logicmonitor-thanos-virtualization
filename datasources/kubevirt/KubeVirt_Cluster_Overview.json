@@ -197,7 +197,7 @@
   "searchKeywords": "cluster,virtualization,openshift,health,kubevirt",
   "displayedAs": "KubeVirt Cluster Overview",
   "description": "Cluster-wide health, VM counts, and migration status for KubeVirt/OpenShift Virtualization",
-  "appliesTo": "openshift.thanos.host && openshift.thanos.pass",
+  "appliesTo": "hasCategory(\"OpenShift_KubeVirt\")",
   "activeDiscovery": {
     "groupExpr": "auto.vmi.namespace",
     "deleteInactiveInstances": false,
