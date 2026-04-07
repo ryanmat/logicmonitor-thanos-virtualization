@@ -3,7 +3,7 @@
 
 # OpenShift Thanos DataSource Suite
 
-31 LogicMonitor DataSources + 1 PropertySource for monitoring OpenShift environments via the Thanos Querier API. Covers OCP platform, etcd, KubeVirt, ODF/Ceph, and ACM. All suites share a single set of connection properties (`openshift.thanos.*`) and use category-based appliesTo gating via a PropertySource that auto-detects installed components.
+54 LogicMonitor DataSources + 1 PropertySource for monitoring OpenShift environments via the Thanos Querier API. Covers OCP platform, etcd, KubeVirt, ODF/Ceph, ACM, ArgoCD/GitOps, and Portworx. All suites share a single set of connection properties (`openshift.thanos.*`) and use category-based appliesTo gating via a PropertySource that auto-detects installed components.
 
 ## Overview
 
@@ -14,9 +14,11 @@
 | **KubeVirt** | 6 | 44 | `datasources/kubevirt/` | `hasCategory("OpenShift_KubeVirt")` | VM CPU, memory, network, storage, cluster overview |
 | **ODF** | 10 | 63 | `datasources/odf/` | `hasCategory("OpenShift_ODF")` | Ceph health, OSD, pools, monitors, MDS, RGW, NooBaa |
 | **ACM** | 5 | 32 | `datasources/acm/` | `hasCategory("OpenShift_ACM")` | Hub health, controllers, managed clusters, observability |
+| **GitOps** | 5 | 28 | `datasources/gitops/` | `hasCategory("OpenShift_GitOps")` | ArgoCD sync, app health, controller, repo server, API server |
+| **Portworx** | 9 | 54 | `datasources/portworx/` | `hasCategory("OpenShift_Portworx")` | Cluster health, node status, volumes, pools, disks, KVDB, autopilot |
 | **PromQL Collector** | 1 | 2 | `datasources/promql/` | `openshift.thanos.host && openshift.thanos.pass` | Run arbitrary PromQL queries |
 
-**Total: 31 DataSources, 196 datapoints across 6 suites.**
+**Total: 54 DataSources, 278 datapoints across 8 suites.**
 
 ## Shared Device Properties
 
@@ -36,14 +38,15 @@ External route pattern: `<route-hostname>:443` with `ssl=true`
 +---------------------------------------------------------------------------+
 |                     OpenShift/ROSA Cluster                                |
 |                                                                           |
-|  +----------+ +----------+ +----------+ +----------+ +----------+        |
-|  | KubeVirt | |  etcd    | |   OCP    | | ODF/Ceph | |   ACM    |        |
-|  |   VMIs   | | members  | | operators| |  storage | |   hub    |        |
-|  +----+-----+ +----+-----+ +----+-----+ +----+-----+ +----+-----+        |
-|       |             |            |            |            |               |
-|       v             v            v            v            v               |
+|  +--------+ +------+ +-----+ +------+ +-----+ +-------+ +---------+     |
+|  |KubeVirt| | etcd | | OCP | |ODF/  | | ACM | |ArgoCD | |Portworx |     |
+|  | VMIs   | |member| |oper.| |Ceph  | | hub | |GitOps | |storage  |     |
+|  +---+----+ +--+---+ +--+--+ +--+---+ +--+--+ +---+---+ +----+----+     |
+|      |         |        |        |        |        |           |          |
+|      v         v        v        v        v        v           v          |
 |  +---------------------------------------------------------+             |
-|  |     virt-handler / etcd / kube-state / ceph-mgr / ACM   |             |
+|  |  virt-handler / etcd / kube-state / ceph-mgr / ACM /    |             |
+|  |  argocd-metrics / portworx-api                          |             |
 |  |         Expose component-specific Prometheus metrics     |             |
 |  +----------------------------+----------------------------+             |
 |                               | scrape                                   |
@@ -80,7 +83,7 @@ External route pattern: `<route-hostname>:443` with `ssl=true`
 
 ### How It Works
 
-1. **Metric exporters** (virt-handler, etcd, kube-state-metrics, ceph-mgr, ACM controllers) expose Prometheus metrics
+1. **Metric exporters** (virt-handler, etcd, kube-state-metrics, ceph-mgr, ACM controllers, ArgoCD metrics, Portworx) expose Prometheus metrics
 2. **Prometheus** (OpenShift Monitoring Stack) scrapes these metrics every 30 seconds
 3. **Thanos Querier** provides a unified PromQL API endpoint
 4. **PropertySource** (`addCategory_OpenShift_Thanos`) probes Thanos for component-specific metrics and sets `system.categories` on the device
@@ -97,7 +100,7 @@ External route pattern: `<route-hostname>:443` with `ssl=true`
 
 ## PropertySource: Auto-Detection
 
-The `addCategory_OpenShift_Thanos` PropertySource runs on any device with `openshift.thanos.host && openshift.thanos.pass`. It probes 5 PromQL queries to detect which components are installed and appends the corresponding categories to `system.categories`.
+The `addCategory_OpenShift_Thanos` PropertySource runs on any device with `openshift.thanos.host && openshift.thanos.pass`. It probes 7 PromQL queries to detect which components are installed and appends the corresponding categories to `system.categories`.
 
 | Category | Probe Query | Component |
 |----------|-------------|-----------|
@@ -106,6 +109,8 @@ The `addCategory_OpenShift_Thanos` PropertySource runs on any device with `opens
 | `OpenShift_KubeVirt` | `kubevirt_info` | OpenShift Virtualization (CNV) |
 | `OpenShift_ODF` | `ceph_health_status` | OpenShift Data Foundation (Ceph) |
 | `OpenShift_ACM` | `acm_managed_cluster_info` | Advanced Cluster Management hub |
+| `OpenShift_GitOps` | `argocd_app_info` | ArgoCD / OpenShift GitOps |
+| `OpenShift_Portworx` | `px_cluster_status_quorum` | Portworx Enterprise storage |
 
 Each DataSource suite uses `hasCategory("OpenShift_XXX")` as its appliesTo, so it only activates on devices where the corresponding component was detected. The PromQL Collector uses a flat property check instead (it is a generic tool, not suite-specific).
 
