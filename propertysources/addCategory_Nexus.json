@@ -1,0 +1,19 @@
+{
+  "scriptType": "embed",
+  "groovyScript": "// Description: Detects Sonatype Nexus Repository Manager and sets system.categories.\n// Description: Probes the Nexus status API to confirm the device is a reachable Nexus instance.\nimport javax.net.ssl.*\nimport java.security.cert.X509Certificate\n\ndef host = hostProps.get(\"nexus.host\")\ndef pass = hostProps.get(\"nexus.pass\")\ndef port = hostProps.get(\"nexus.port\") ?: \"8081\"\ndef useSsl = (hostProps.get(\"nexus.ssl\") ?: \"true\").toLowerCase() == \"true\"\n\nif (!host || !pass) {\n    return 0\n}\n\ndef trustAllCerts = [\n    checkClientTrusted: { chain, authType -> },\n    checkServerTrusted: { chain, authType -> },\n    getAcceptedIssuers: { null }\n] as X509TrustManager\n\ndef sc = SSLContext.getInstance(\"TLS\")\nsc.init(null, [trustAllCerts] as TrustManager[], null)\nHttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory())\nHttpsURLConnection.setDefaultHostnameVerifier({ hostname, session -> true } as HostnameVerifier)\n\ndef proto = useSsl ? \"https\" : \"http\"\ndef baseUrl = \"${proto}://${host}:${port}\"\n\ntry {\n    def url = new URL(\"${baseUrl}/service/rest/v1/status\")\n    def conn = url.openConnection()\n    conn.setConnectTimeout(30000)\n    conn.setReadTimeout(30000)\n\n    if (conn.responseCode == 200) {\n        println \"system.categories=Nexus\"\n    }\n} catch (Exception e) {\n    System.err.println(\"Nexus probe error: ${e.message}\")\n}\n\nreturn 0\n",
+  "windowsScript": "",
+  "linuxScript": "",
+  "windowsCmdline": "",
+  "linuxCmdline": "",
+  "version": 1776200000,
+  "auditVersion": 0,
+  "name": "addCategory_Nexus",
+  "description": "Detects Sonatype Nexus Repository Manager via the status API and sets system.categories for suite-level appliesTo gating.",
+  "group": "Nexus",
+  "tags": "nexus,sonatype,repository,docker,registry",
+  "technology": "Requires nexus.host and nexus.pass properties. Probes GET /service/rest/v1/status (no auth required) and appends Nexus category on HTTP 200.",
+  "appliesTo": "nexus.host && nexus.pass",
+  "scheduleOption": "onAP",
+  "interval": 0,
+  "dataType": 0
+}

@@ -1,9 +1,13 @@
-<!-- Description: README for LogicMonitor OpenShift Thanos DataSource suite. -->
+<!-- Description: README for LogicMonitor DataSource suites: OpenShift Thanos and Sonatype Nexus. -->
 <!-- Description: Covers architecture, DataSource inventory, metrics, device properties, setup, and troubleshooting. -->
 
-# OpenShift Thanos DataSource Suite
+# LogicMonitor DataSource Suite
 
-54 LogicMonitor DataSources + 1 PropertySource for monitoring OpenShift environments via the Thanos Querier API. Covers OCP platform, etcd, KubeVirt, ODF/Ceph, ACM, ArgoCD/GitOps, and Portworx. All suites share a single set of connection properties (`openshift.thanos.*`) and use category-based appliesTo gating via a PropertySource that auto-detects installed components.
+60 LogicMonitor DataSources + 2 PropertySources for monitoring OpenShift environments via Thanos Querier API and Sonatype Nexus Repository Manager via REST API.
+
+## OpenShift Thanos Suite
+
+54 DataSources + 1 PropertySource for monitoring OpenShift environments via the Thanos Querier API. Covers OCP platform, etcd, KubeVirt, ODF/Ceph, ACM, ArgoCD/GitOps, and Portworx. All suites share a single set of connection properties (`openshift.thanos.*`) and use category-based appliesTo gating via a PropertySource that auto-detects installed components.
 
 ## Overview
 
@@ -763,6 +767,83 @@ The `container_runtime_crio_image_pulls_success_total` metric is CRI-O specific.
 ### Ingress Latency Shows 0 Instances
 
 The `haproxy_server_up` metric is specific to the OpenShift HAProxy router. Clusters using a different ingress controller will not have this metric.
+
+---
+
+## Sonatype Nexus Suite
+
+6 DataSources + 1 PropertySource for monitoring Sonatype Nexus Repository Manager via REST API. Standalone suite, independent of the Thanos/PromQL architecture. Uses Basic Auth against the Nexus REST API to monitor system health, blob stores, repositories, HTTP metrics, system resources, and scheduled tasks.
+
+### Nexus Device Properties
+
+| Property | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `nexus.host` | Yes | - | Nexus Repository Manager hostname |
+| `nexus.user` | Yes | - | Username with `nx-metrics-all` and `nx-atlas-all` privileges |
+| `nexus.pass` | Yes | - | Password or user token passCode |
+| `nexus.port` | No | 8081 | Nexus HTTP port |
+| `nexus.ssl` | No | true | Use HTTPS |
+
+### Nexus PropertySource
+
+| PropertySource | appliesTo | Probe | Category Set |
+|----------------|-----------|-------|-------------|
+| addCategory_Nexus | `nexus.host && nexus.pass` | `GET /service/rest/v1/status` (no auth) | `Nexus` |
+
+### Nexus DataSource Inventory
+
+| DataSource | Instances | Collection | Discovery | Datapoints | Description |
+|------------|-----------|------------|-----------|------------|-------------|
+| Nexus_System_Health | 1 (server) | 1 min | 15 min | 3 | Liveness, write availability, freeze state |
+| Nexus_Blob_Store_Health | Per blob store | 1 min | 15 min | 6 | Availability, capacity, utilization, quota violations |
+| Nexus_Repository_Status | Per repository | 1 min | 15 min | 2 | Online/offline, proxy auto-block detection |
+| Nexus_HTTP_Metrics | 1 (server) | 1 min | 15 min | 6 | HTTP 2xx/4xx/5xx rates, 401/403 counts, request rate |
+| Nexus_System_Resources | 1 (server) | 1 min | 15 min | 8 | JVM heap, threads, CPU cores, disk utilization |
+| Nexus_Task_Health | Per task | 1 min | 15 min | 2 | Task state, last run result |
+
+**Total: 6 DataSources, 27 datapoints.**
+
+- **appliesTo**: `hasCategory("Nexus")`
+- **Group**: `Nexus`
+- **ILP grouping**: blob stores by type, repositories by format, tasks by type
+
+### Customer Use Case: Image Pull Failure Diagnosis
+
+| Failure Cause | DataSource | Datapoint | Threshold |
+|---|---|---|---|
+| Nexus is down | Nexus_System_Health | `status` | < 1 |
+| Nexus frozen/read-only | Nexus_System_Health | `writable`, `frozen` | writable < 1, frozen > 0 |
+| Blob store full/quota hit | Nexus_Blob_Store_Health | `quota_violation`, `used_percent` | > 0, > 85% |
+| Repository offline | Nexus_Repository_Status | `online` | < 1 |
+| Upstream registry blocked | Nexus_Repository_Status | `proxy_blocked` | > 0 |
+| Auth failures spiking | Nexus_HTTP_Metrics | `response_401_count`, `response_403_count` | delta trend |
+| HTTP errors spiking | Nexus_HTTP_Metrics | `response_5xx_rate` | > 5/sec |
+| Disk full | Nexus_System_Resources | `disk_used_pct` | > 90% |
+| JVM out of memory | Nexus_System_Resources | `heap_used_pct` | > 90% |
+| Cleanup tasks stuck | Nexus_Task_Health | `last_run_result` | > 0 |
+
+### Nexus API Endpoints Used
+
+| Endpoint | Auth Required | DS |
+|----------|---------------|-----|
+| `GET /service/rest/v1/status` | No | System Health, PropertySource |
+| `GET /service/rest/v1/status/writable` | No | System Health |
+| `GET /service/rest/v1/read-only` | Yes | System Health |
+| `GET /service/rest/v1/blobstores` | Yes | Blob Store Health |
+| `GET /service/rest/v1/blobstores/{name}/quota-status` | Yes | Blob Store Health |
+| `GET /service/rest/v1/repositories` | Yes | Repository Status |
+| `GET /service/rest/v1/repositories/{format}/proxy/{name}` | Yes | Repository Status |
+| `GET /service/rest/metrics/data` | Yes (`nx-metrics-all`) | HTTP Metrics |
+| `GET /service/rest/atlas/system-information` | Yes (`nx-atlas-all`) | System Resources |
+| `GET /service/rest/v1/tasks` | Yes | Task Health |
+
+### Nexus Setup
+
+1. Create a monitoring service account in Nexus with `nx-metrics-all` and `nx-atlas-all` privileges
+2. Add the LM device representing the Nexus server
+3. Set device properties: `nexus.host`, `nexus.user`, `nexus.pass` (and optionally `nexus.port`, `nexus.ssl`)
+4. The PropertySource will auto-detect Nexus and set the `Nexus` category
+5. All 6 DataSources will begin collecting once the category is applied
 
 ## License
 

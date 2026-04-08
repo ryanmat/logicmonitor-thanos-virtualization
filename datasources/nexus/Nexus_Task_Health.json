@@ -1,0 +1,85 @@
+{
+  "collectionMethod": "script",
+  "datapoints": [
+    {
+      "max": "",
+      "triggerInterval": 5,
+      "dataType": 7,
+      "maxDigits": 4,
+      "description": "Task current state (0=waiting, 1=running, 2=unknown)",
+      "interpretMethod": "namevalue",
+      "interpretExpr": "current_state",
+      "type": "gauge",
+      "clearInterval": 0,
+      "originId": "",
+      "useValue": "output",
+      "min": "0",
+      "name": "current_state",
+      "noData": "Do not trigger an alert",
+      "statusDisplayNames": []
+    },
+    {
+      "max": "",
+      "triggerInterval": 5,
+      "dataType": 7,
+      "maxDigits": 4,
+      "description": "Last run result (0=OK, 1=FAILED, 2=CANCELED, 3=unknown)",
+      "interpretMethod": "namevalue",
+      "threshold": "> 0",
+      "interpretExpr": "last_run_result",
+      "type": "gauge",
+      "clearInterval": 0,
+      "originId": "",
+      "useValue": "output",
+      "min": "0",
+      "name": "last_run_result",
+      "noData": "Do not trigger an alert",
+      "statusDisplayNames": []
+    }
+  ],
+  "searchKeywords": "nexus,sonatype,tasks,scheduled,cleanup,compaction,health",
+  "displayedAs": "Nexus Task Health",
+  "description": "Per-task current state and last run result for Nexus Repository Manager scheduled tasks via REST API",
+  "appliesTo": "hasCategory(\"Nexus\")",
+  "activeDiscovery": {
+    "groupExpr": "auto.task.type",
+    "deleteInactiveInstances": true,
+    "groupMethod": "ilp",
+    "discoveryMethod": "ad_script",
+    "autoDeleteInstances": false,
+    "disableDiscoveredInstances": false,
+    "filters": [],
+    "params": {
+      "type": "groovy",
+      "content": "// Description: Discovers Nexus scheduled tasks via the tasks REST API.\n// Description: Each task becomes a monitored instance with task type as a grouping property.\nimport groovy.json.JsonSlurper\nimport javax.net.ssl.*\nimport java.security.cert.X509Certificate\n\ndef host = hostProps.get(\"nexus.host\")\ndef user = hostProps.get(\"nexus.user\")\ndef pass = hostProps.get(\"nexus.pass\")\ndef port = hostProps.get(\"nexus.port\") ?: \"8081\"\ndef useSsl = (hostProps.get(\"nexus.ssl\") ?: \"true\").toLowerCase() == \"true\"\n\nif (!host || !user || !pass) {\n    return 1\n}\n\ndef credentials = \"${user}:${pass}\".bytes.encodeBase64().toString()\n\ndef trustAllCerts = [\n    checkClientTrusted: { chain, authType -> },\n    checkServerTrusted: { chain, authType -> },\n    getAcceptedIssuers: { null }\n] as X509TrustManager\n\ndef sc = SSLContext.getInstance(\"TLS\")\nsc.init(null, [trustAllCerts] as TrustManager[], null)\nHttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory())\nHttpsURLConnection.setDefaultHostnameVerifier({ hostname, session -> true } as HostnameVerifier)\n\ndef proto = useSsl ? \"https\" : \"http\"\ndef baseUrl = \"${proto}://${host}:${port}\"\n\ndef allTasks = []\ndef continuationToken = null\n\n// Paginate through all tasks\nwhile (true) {\n    try {\n        def path = \"/service/rest/v1/tasks\"\n        if (continuationToken) {\n            path += \"?continuationToken=${java.net.URLEncoder.encode(continuationToken, 'UTF-8')}\"\n        }\n        def url = new URL(\"${baseUrl}${path}\")\n        def conn = url.openConnection()\n        conn.setRequestProperty(\"Authorization\", \"Basic ${credentials}\")\n        conn.setRequestProperty(\"Accept\", \"application/json\")\n        conn.setConnectTimeout(30000)\n        conn.setReadTimeout(30000)\n\n        if (conn.responseCode == 200) {\n            def response = new JsonSlurper().parseText(conn.inputStream.text)\n            def items = response.items ?: []\n            allTasks.addAll(items)\n            continuationToken = response.continuationToken\n            if (!continuationToken) break\n        } else {\n            System.err.println(\"Task discovery failed: HTTP ${conn.responseCode}\")\n            return 1\n        }\n    } catch (Exception e) {\n        System.err.println(\"Task discovery error: ${e.message}\")\n        return 1\n    }\n}\n\nallTasks.each { task ->\n    def id = task.id ?: \"unknown\"\n    def name = task.name ?: \"unknown\"\n    def type = task.type ?: \"unknown\"\n    println \"${id}##${name}##${type} task####auto.task.name=${java.net.URLEncoder.encode(name, 'UTF-8')}&auto.task.type=${java.net.URLEncoder.encode(type, 'UTF-8')}\"\n}\nreturn 0\n"
+    },
+    "discoveryInterval": "15m",
+    "enabled": true,
+    "showDeletedInstanceDays": 0
+  },
+  "collectionAttrs": {
+    "type": "groovy",
+    "content": "// Description: Collects current state and last run result for each Nexus scheduled task.\n// Description: Fetches the full task list and matches by task ID to avoid per-instance API calls.\nimport groovy.json.JsonSlurper\nimport javax.net.ssl.*\nimport java.security.cert.X509Certificate\n\ndef host = hostProps.get(\"nexus.host\")\ndef user = hostProps.get(\"nexus.user\")\ndef pass = hostProps.get(\"nexus.pass\")\ndef port = hostProps.get(\"nexus.port\") ?: \"8081\"\ndef useSsl = (hostProps.get(\"nexus.ssl\") ?: \"true\").toLowerCase() == \"true\"\ndef taskId = instanceProps.get(\"wildvalue\")\n\ndef results = [\n    \"current_state\": 2,\n    \"last_run_result\": 3\n]\n\nif (!host || !user || !pass || !taskId) {\n    results.each { k, v -> println(\"${k}:${v}\") }\n    return 0\n}\n\ndef credentials = \"${user}:${pass}\".bytes.encodeBase64().toString()\n\ndef trustAllCerts = [\n    checkClientTrusted: { chain, authType -> },\n    checkServerTrusted: { chain, authType -> },\n    getAcceptedIssuers: { null }\n] as X509TrustManager\n\ndef sc = SSLContext.getInstance(\"TLS\")\nsc.init(null, [trustAllCerts] as TrustManager[], null)\nHttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory())\nHttpsURLConnection.setDefaultHostnameVerifier({ hostname, session -> true } as HostnameVerifier)\n\ndef proto = useSsl ? \"https\" : \"http\"\ndef baseUrl = \"${proto}://${host}:${port}\"\n\n// Fetch all tasks with pagination and find this instance\ndef continuationToken = null\ndef found = false\n\nwhile (!found) {\n    try {\n        def path = \"/service/rest/v1/tasks\"\n        if (continuationToken) {\n            path += \"?continuationToken=${java.net.URLEncoder.encode(continuationToken, 'UTF-8')}\"\n        }\n        def url = new URL(\"${baseUrl}${path}\")\n        def conn = url.openConnection()\n        conn.setRequestProperty(\"Authorization\", \"Basic ${credentials}\")\n        conn.setRequestProperty(\"Accept\", \"application/json\")\n        conn.setConnectTimeout(30000)\n        conn.setReadTimeout(30000)\n\n        if (conn.responseCode == 200) {\n            def response = new JsonSlurper().parseText(conn.inputStream.text)\n            def items = response.items ?: []\n\n            def task = items.find { it.id == taskId }\n            if (task) {\n                def stateMap = [\"WAITING\": 0, \"RUNNING\": 1]\n                def resultMap = [\"OK\": 0, \"FAILED\": 1, \"CANCELED\": 2]\n\n                results[\"current_state\"] = stateMap.getOrDefault(task.currentState?.toUpperCase(), 2)\n                results[\"last_run_result\"] = resultMap.getOrDefault(task.lastRunResult?.toUpperCase(), 3)\n                found = true\n            }\n\n            continuationToken = response.continuationToken\n            if (!continuationToken) break\n        } else {\n            System.err.println(\"Task collection failed: HTTP ${conn.responseCode}\")\n            break\n        }\n    } catch (Exception e) {\n        System.err.println(\"Task collection error: ${e.message}\")\n        break\n    }\n}\n\nresults.each { k, v -> println(\"${k}:${v}\") }\nreturn 0\n"
+  },
+  "type": 0,
+  "technicalNotes": "Discovery and collection both use GET /service/rest/v1/tasks with continuationToken pagination. Discovery emits all tasks as instances. Collection fetches the paginated task list and matches by task ID. State mapping: WAITING=0, RUNNING=1, unknown=2. Result mapping: OK=0, FAILED=1, CANCELED=2, unknown=3.",
+  "useWildValueAsUniqueIdentifier": false,
+  "version": 1776200000,
+  "registryMetadata": {
+    "currentUuid": "",
+    "originalUuid": "",
+    "locatorId": "",
+    "authorCompanyUuid": "",
+    "registryVersion": "1.0.0",
+    "checksum": "",
+    "namespace": "",
+    "registryId": "",
+    "isChangedFromOrigin": false,
+    "status": ""
+  },
+  "multiInstance": true,
+  "name": "Nexus_Task_Health",
+  "collectionInterval": "1m",
+  "dataSourceType": 1,
+  "group": "Nexus"
+}

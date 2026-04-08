@@ -1,0 +1,86 @@
+{
+  "collectionMethod": "script",
+  "datapoints": [
+    {
+      "max": "",
+      "triggerInterval": 5,
+      "dataType": 7,
+      "maxDigits": 4,
+      "description": "Repository online status (1=online, 0=offline)",
+      "interpretMethod": "namevalue",
+      "threshold": "< 1",
+      "interpretExpr": "online",
+      "type": "gauge",
+      "clearInterval": 0,
+      "originId": "",
+      "useValue": "output",
+      "min": "0",
+      "name": "online",
+      "noData": "Do not trigger an alert",
+      "statusDisplayNames": []
+    },
+    {
+      "max": "",
+      "triggerInterval": 5,
+      "dataType": 7,
+      "maxDigits": 4,
+      "description": "Proxy repository auto-block state (0=ok, 1=blocked; hosted/group repos always report 0)",
+      "interpretMethod": "namevalue",
+      "threshold": "> 0",
+      "interpretExpr": "proxy_blocked",
+      "type": "gauge",
+      "clearInterval": 0,
+      "originId": "",
+      "useValue": "output",
+      "min": "0",
+      "name": "proxy_blocked",
+      "noData": "Do not trigger an alert",
+      "statusDisplayNames": []
+    }
+  ],
+  "searchKeywords": "nexus,sonatype,repository,docker,maven,proxy,online,blocked",
+  "displayedAs": "Nexus Repository Status",
+  "description": "Per-repository online/offline status and proxy auto-block detection for Nexus Repository Manager via REST API",
+  "appliesTo": "hasCategory(\"Nexus\")",
+  "activeDiscovery": {
+    "groupExpr": "auto.repo.format",
+    "deleteInactiveInstances": true,
+    "groupMethod": "ilp",
+    "discoveryMethod": "ad_script",
+    "autoDeleteInstances": false,
+    "disableDiscoveredInstances": false,
+    "filters": [],
+    "params": {
+      "type": "groovy",
+      "content": "// Description: Discovers all Nexus repositories via the repositories REST API.\n// Description: Each repository becomes an instance with format and type as properties.\nimport groovy.json.JsonSlurper\nimport javax.net.ssl.*\nimport java.security.cert.X509Certificate\n\ndef host = hostProps.get(\"nexus.host\")\ndef user = hostProps.get(\"nexus.user\")\ndef pass = hostProps.get(\"nexus.pass\")\ndef port = hostProps.get(\"nexus.port\") ?: \"8081\"\ndef useSsl = (hostProps.get(\"nexus.ssl\") ?: \"true\").toLowerCase() == \"true\"\n\nif (!host || !user || !pass) {\n    return 1\n}\n\ndef credentials = \"${user}:${pass}\".bytes.encodeBase64().toString()\n\ndef trustAllCerts = [\n    checkClientTrusted: { chain, authType -> },\n    checkServerTrusted: { chain, authType -> },\n    getAcceptedIssuers: { null }\n] as X509TrustManager\n\ndef sc = SSLContext.getInstance(\"TLS\")\nsc.init(null, [trustAllCerts] as TrustManager[], null)\nHttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory())\nHttpsURLConnection.setDefaultHostnameVerifier({ hostname, session -> true } as HostnameVerifier)\n\ndef proto = useSsl ? \"https\" : \"http\"\ndef baseUrl = \"${proto}://${host}:${port}\"\n\ntry {\n    def url = new URL(\"${baseUrl}/service/rest/v1/repositories\")\n    def conn = url.openConnection()\n    conn.setRequestProperty(\"Authorization\", \"Basic ${credentials}\")\n    conn.setRequestProperty(\"Accept\", \"application/json\")\n    conn.setConnectTimeout(30000)\n    conn.setReadTimeout(30000)\n\n    if (conn.responseCode == 200) {\n        def repos = new JsonSlurper().parseText(conn.inputStream.text)\n        repos.each { repo ->\n            def name = repo.name ?: \"unknown\"\n            def format = repo.format ?: \"unknown\"\n            def type = repo.type ?: \"unknown\"\n            println \"${name}##${name}##${format} ${type} repository####auto.repo.format=${format}&auto.repo.type=${type}\"\n        }\n    } else {\n        System.err.println(\"Repository discovery failed: HTTP ${conn.responseCode}\")\n        return 1\n    }\n} catch (Exception e) {\n    System.err.println(\"Repository discovery error: ${e.message}\")\n    return 1\n}\nreturn 0\n"
+    },
+    "discoveryInterval": "15m",
+    "enabled": true,
+    "showDeletedInstanceDays": 0
+  },
+  "collectionAttrs": {
+    "type": "groovy",
+    "content": "// Description: Collects per-repository online status and proxy auto-block state.\n// Description: Fetches the repo list for online status; for proxy repos, fetches detailed config for block state.\nimport groovy.json.JsonSlurper\nimport javax.net.ssl.*\nimport java.security.cert.X509Certificate\n\ndef host = hostProps.get(\"nexus.host\")\ndef user = hostProps.get(\"nexus.user\")\ndef pass = hostProps.get(\"nexus.pass\")\ndef port = hostProps.get(\"nexus.port\") ?: \"8081\"\ndef useSsl = (hostProps.get(\"nexus.ssl\") ?: \"true\").toLowerCase() == \"true\"\ndef repoName = instanceProps.get(\"wildvalue\")\ndef repoFormat = instanceProps.get(\"auto.repo.format\")\ndef repoType = instanceProps.get(\"auto.repo.type\")\n\ndef results = [\n    \"online\": 0,\n    \"proxy_blocked\": 0\n]\n\nif (!host || !user || !pass || !repoName) {\n    results.each { k, v -> println(\"${k}:${v}\") }\n    return 0\n}\n\ndef credentials = \"${user}:${pass}\".bytes.encodeBase64().toString()\n\ndef trustAllCerts = [\n    checkClientTrusted: { chain, authType -> },\n    checkServerTrusted: { chain, authType -> },\n    getAcceptedIssuers: { null }\n] as X509TrustManager\n\ndef sc = SSLContext.getInstance(\"TLS\")\nsc.init(null, [trustAllCerts] as TrustManager[], null)\nHttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory())\nHttpsURLConnection.setDefaultHostnameVerifier({ hostname, session -> true } as HostnameVerifier)\n\ndef proto = useSsl ? \"https\" : \"http\"\ndef baseUrl = \"${proto}://${host}:${port}\"\n\ndef nexusGet(String path, String baseUrl, String credentials) {\n    try {\n        def url = new URL(\"${baseUrl}${path}\")\n        def conn = url.openConnection()\n        conn.setRequestProperty(\"Authorization\", \"Basic ${credentials}\")\n        conn.setRequestProperty(\"Accept\", \"application/json\")\n        conn.setConnectTimeout(30000)\n        conn.setReadTimeout(30000)\n        if (conn.responseCode == 200) {\n            return new JsonSlurper().parseText(conn.inputStream.text)\n        } else {\n            System.err.println(\"Nexus API error: HTTP ${conn.responseCode} for ${path}\")\n        }\n    } catch (Exception e) {\n        System.err.println(\"Nexus API error for ${path}: ${e.message}\")\n    }\n    return null\n}\n\n// Fetch repo list and find this instance for online status\ndef repos = nexusGet(\"/service/rest/v1/repositories\", baseUrl, credentials)\nif (repos != null) {\n    def repo = repos.find { it.name == repoName }\n    if (repo) {\n        results[\"online\"] = (repo.online != false) ? 1 : 0\n    }\n}\n\n// For proxy repos, check auto-block status via the format-specific detail endpoint\nif (repoType == \"proxy\" && repoFormat) {\n    def encodedName = java.net.URLEncoder.encode(repoName, \"UTF-8\")\n    def detail = nexusGet(\"/service/rest/v1/repositories/${repoFormat}/proxy/${encodedName}\", baseUrl, credentials)\n    if (detail) {\n        def httpClient = detail.httpClient\n        if (httpClient?.connection) {\n            def blocked = httpClient.connection.blocked ?: false\n            def autoBlocked = httpClient.connection.autoBlock ?: false\n            results[\"proxy_blocked\"] = (blocked || (autoBlocked && detail.proxy?.remoteUrl == null)) ? 1 : 0\n        }\n        // Also check if the proxy status indicates auto-blocking via nested status field\n        if (detail.status) {\n            def proxyMode = detail.status.proxyMode ?: \"\"\n            if (proxyMode.toLowerCase().contains(\"blocked\")) {\n                results[\"proxy_blocked\"] = 1\n            }\n        }\n    }\n}\n\nresults.each { k, v -> println(\"${k}:${v}\") }\nreturn 0\n"
+  },
+  "type": 0,
+  "technicalNotes": "Discovery uses GET /service/rest/v1/repositories which returns all repos with name, format, type, url, and online fields. Collection re-fetches the list for online status. For proxy repos, fetches GET /v1/repositories/{format}/proxy/{name} to check httpClient.connection.blocked and auto-block state. Hosted and group repos always report proxy_blocked=0.",
+  "useWildValueAsUniqueIdentifier": false,
+  "version": 1776200000,
+  "registryMetadata": {
+    "currentUuid": "",
+    "originalUuid": "",
+    "locatorId": "",
+    "authorCompanyUuid": "",
+    "registryVersion": "1.0.0",
+    "checksum": "",
+    "namespace": "",
+    "registryId": "",
+    "isChangedFromOrigin": false,
+    "status": ""
+  },
+  "multiInstance": true,
+  "name": "Nexus_Repository_Status",
+  "collectionInterval": "1m",
+  "dataSourceType": 1,
+  "group": "Nexus"
+}
