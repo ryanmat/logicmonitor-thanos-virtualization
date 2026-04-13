@@ -13,7 +13,7 @@
 
 | Suite | DataSources | Datapoints | Directory | appliesTo | Purpose |
 |-------|-------------|------------|-----------|-----------|---------|
-| **OCP** | 6 | 32 | `datasources/ocp/` | `hasCategory("OpenShift_OCP")` | Operator status, API server, pod health, image pulls, ingress |
+| **OCP** | 15 | 90 | `datasources/ocp/` | `hasCategory("OpenShift_OCP")` | Operators, API server, scheduler, controller manager, kubelet, certificates, DNS, network, pods, throttling, monitoring, quotas, ingress |
 | **Etcd** | 3 | 23 | `datasources/etcd/` | `hasCategory("OpenShift_Etcd")` | etcd cluster health, member performance, consensus |
 | **KubeVirt** | 6 | 44 | `datasources/kubevirt/` | `hasCategory("OpenShift_KubeVirt")` | VM CPU, memory, network, storage, cluster overview |
 | **ODF** | 10 | 63 | `datasources/odf/` | `hasCategory("OpenShift_ODF")` | Ceph health, OSD, pools, monitors, MDS, RGW, NooBaa |
@@ -22,7 +22,7 @@
 | **Portworx** | 9 | 54 | `datasources/portworx/` | `hasCategory("OpenShift_Portworx")` | Cluster health, node status, volumes, pools, disks, KVDB, autopilot |
 | **PromQL Collector** | 1 | 2 | `datasources/promql/` | `openshift.thanos.host && openshift.thanos.pass` | Run arbitrary PromQL queries |
 
-**Total: 54 DataSources, 278 datapoints across 8 suites.**
+**Total: 54 DataSources, 336 datapoints across 8 suites.**
 
 ## Shared Device Properties
 
@@ -135,17 +135,26 @@ oc create token logicmonitor-thanos-reader -n openshift-monitoring --duration=87
 ```
 
 Then in LogicMonitor:
-1. Import the PropertySource from `propertysources/addCategory_OpenShift_Thanos.json`
-2. Import DataSource JSON files from the relevant `datasources/` subdirectories
-3. Set `openshift.thanos.host` and `openshift.thanos.pass` as device properties
+1. Navigate to **Settings > LogicModules > PropertySources > Add > Import** and upload `propertysources/addCategory_OpenShift_Thanos.json`
+2. Navigate to **Settings > LogicModules > DataSources > Add > Import** and upload each JSON file from the relevant `datasources/` subdirectories
+3. Set `openshift.thanos.host` and `openshift.thanos.pass` as device properties on the target device (or device group)
 4. The PropertySource auto-detects installed components and sets categories
 5. DataSources activate automatically based on detected categories
 
+### Verify Installation
+
+After importing and setting device properties, verify data is flowing:
+
+1. **Check categories**: Go to the device's **Info** tab. Under `system.categories`, you should see categories like `OpenShift_OCP`, `OpenShift_Etcd`, etc. for each detected component. If categories are missing, check the PropertySource execution log on the collector.
+2. **Check DataSource instances**: Go to the device's **Resources** tab. DataSources should appear grouped by suite (OCP, Etcd, etc.). Multi-instance DataSources (e.g., `OCP_Operator_Health`, `OCP_Kubelet_Health`) should show discovered instances.
+3. **Check data collection**: Click into a DataSource instance and view the **Raw Data** tab. After 2-3 collection cycles (2-3 minutes), you should see non-zero values for most datapoints. Datapoints that return `0` on a healthy cluster (e.g., `error_rate`, `nodes_offline`) are expected.
+4. **Troubleshoot**: If no data appears, check the Troubleshooting section at the end of this document.
+
 ---
 
-## OCP Platform DataSources (6)
+## OCP Platform DataSources (15)
 
-Monitors OpenShift platform health: operator status, API server performance, pod failure states, image pull reliability, and ingress latency. All metrics come from standard OpenShift components (kube-state-metrics, apiserver, CRI-O, HAProxy) exposed through the Thanos Querier.
+Monitors OpenShift platform health: operators, API server, scheduler, controller manager, kubelet, certificates, DNS, networking, pods, CPU throttling, monitoring stack, resource quotas, image pulls, and ingress latency. All metrics come from standard OpenShift components exposed through the Thanos Querier.
 
 DataSource files are located in `datasources/ocp/`.
 
@@ -155,12 +164,21 @@ DataSource files are located in `datasources/ocp/`.
 |------------|-----------|------------|-----------|------------|-------------|
 | OCP_Operator_Health | Per operator (~30-35) | 1 min | 15 min | 4 | Per-operator Available, Degraded, Progressing, Upgradeable conditions |
 | OCP_Operator_Overview | 1 (cluster) | 1 min | 15 min | 3 | Cluster-wide operator degraded/unavailable counts |
-| OCP_API_Server_Performance | 1 (apiserver) | 1 min | 15 min | 7 | API server request rate, p99 latency, inflight, 429s, terminations |
+| OCP_API_Server_Performance | 1 (apiserver) | 1 min | 15 min | 8 | API server request rate, p95/p99 latency, inflight, 429s, terminations |
 | OCP_Pod_Health | 1 (cluster) | 1 min | 15 min | 7 | Cluster-wide pod failure counts by reason |
 | OCP_Image_Pull_Health | Per node + 1 cluster | 1 min | 15 min | 5 | Per-node CRI-O pull rates and cluster pull failure counts |
 | OCP_Ingress_Latency | Per route | 1 min | 15 min | 6 | Per-route HAProxy request rate, latency, errors, backend status |
+| OCP_Certificate_Health | 1 (cluster) | 1 min | 15 min | 4 | Certificate expiry, kubelet cert TTL, TLS errors, rotation age |
+| OCP_Controller_Manager | 1 (controller) | 1 min | 15 min | 6 | Work queue depth, add rate, queue/work duration p99, retries |
+| OCP_Scheduler_Performance | 1 (scheduler) | 1 min | 15 min | 7 | Pending pods by queue, scheduling attempts, p99 latency, preemptions |
+| OCP_CPU_Throttling | 1 (cluster) | 1 min | 15 min | 5 | Throttled periods rate, ratio, seconds, namespaces above 25% |
+| OCP_Monitoring_Health | 1 (monitoring) | 1 min | 15 min | 6 | Prometheus instances up, TSDB series, WAL corruptions, targets down |
+| OCP_Kubelet_Health | Per node (~8-10) | 1 min | 15 min | 7 | PLEG relist p99, runtime errors, pod start latency, running pods/containers |
+| OCP_CoreDNS_Health | 1 (cluster) | 1 min | 15 min | 7 | DNS request rate, p99 latency, SERVFAIL/NXDOMAIN rates, cache hit ratio |
+| OCP_OVN_Network_Health | 1 (cluster) | 1 min | 15 min | 7 | CNI request p99, OVS packet drops/errors, southbound DB connectivity |
+| OCP_ResourceQuota_Usage | Per namespace with quotas | 1 min | 15 min | 8 | CPU/memory/pods used vs hard limits and utilization percentages |
 
-**Total: 32 datapoints across 6 DataSources.**
+**Total: 90 datapoints across 15 DataSources.**
 
 - **appliesTo**: `hasCategory("OpenShift_OCP")`
 - **Group**: `OCP`
@@ -182,11 +200,12 @@ DataSource files are located in `datasources/ocp/`.
 | `operators_unavailable` | Count of operators with Available=false (alert if > 0) |
 | `operators_total` | Total number of ClusterOperators |
 
-#### API Server Performance (7 datapoints)
+#### API Server Performance (8 datapoints)
 | Metric | Description |
 |--------|-------------|
 | `request_rate` | Total API requests per second |
 | `error_rate_5xx` | 5xx responses per second (alert if > 10) |
+| `p95_latency_ms` | Request latency p95 in ms, excludes WATCH (alert if > 1000) |
 | `p99_latency_ms` | Request latency p99 in ms, excludes WATCH (alert if > 2000) |
 | `inflight_mutating` | Current in-flight mutating requests (alert if > 400) |
 | `inflight_readonly` | Current in-flight read-only requests (alert if > 600) |
@@ -223,15 +242,109 @@ DataSource files are located in `datasources/ocp/`.
 | `backend_up` | Backend server status, 1=up 0=down (alert if < 1) |
 | `active_sessions` | Current active sessions for this route |
 
+#### Certificate Health (4 datapoints)
+| Metric | Description |
+|--------|-------------|
+| `min_cert_expiry_seconds` | Minimum certificate expiry time across all certs in seconds |
+| `kubelet_cert_ttl_seconds` | Kubelet serving certificate TTL in seconds |
+| `tls_handshake_errors` | TLS handshake errors per second (alert if > 0) |
+| `client_cert_rotation_age` | Client certificate rotation age in seconds |
+
+#### Controller Manager (6 datapoints)
+| Metric | Description |
+|--------|-------------|
+| `workqueue_depth` | Controller manager work queue depth (alert if > 100) |
+| `adds_rate` | Work queue item additions per second |
+| `queue_duration_p99_ms` | Queue wait duration p99 in ms |
+| `work_duration_p99_ms` | Work processing duration p99 in ms |
+| `retries_rate` | Work queue retries per second (alert if > 5) |
+| `unfinished_work_seconds` | Seconds of unfinished work in queue |
+
+#### Scheduler Performance (7 datapoints)
+| Metric | Description |
+|--------|-------------|
+| `pending_active` | Pods in active scheduling queue |
+| `pending_backoff` | Pods in scheduling backoff queue |
+| `pending_unschedulable` | Pods in unschedulable queue (alert if > 0) |
+| `schedule_attempts_rate` | Scheduling attempts per second |
+| `scheduling_p99_ms` | End-to-end scheduling latency p99 in ms (alert if > 5000) |
+| `preemption_attempts_rate` | Preemption attempts per second |
+| `scheduling_errors_rate` | Scheduling errors per second (alert if > 0) |
+
+#### CPU Throttling (5 datapoints)
+| Metric | Description |
+|--------|-------------|
+| `throttled_periods_rate` | CPU throttled periods per second across all containers |
+| `total_periods_rate` | Total CFS periods per second |
+| `throttle_ratio_pct` | Percentage of periods that are throttled (alert if > 25) |
+| `throttled_seconds_rate` | CPU seconds lost to throttling per second |
+| `namespaces_above_25pct` | Number of namespaces with throttle ratio above 25% (alert if > 0) |
+
+#### Monitoring Health (6 datapoints)
+| Metric | Description |
+|--------|-------------|
+| `prometheus_instances_up` | Number of Prometheus instances reporting as up |
+| `tsdb_head_series` | Total active time series in Prometheus TSDB |
+| `wal_corruptions` | Write-ahead log corruption count (alert if > 0) |
+| `targets_down` | Number of scrape targets not responding (alert if > 0) |
+| `config_reload_success` | Configuration reload success (1=ok, 0=failed, alert if < 1) |
+| `query_duration_p99_ms` | Prometheus query duration p99 in ms |
+
+#### Kubelet Health (7 datapoints)
+| Metric | Description |
+|--------|-------------|
+| `pleg_relist_p99_ms` | PLEG relist interval p99 in ms (alert if > 5000) |
+| `runtime_errors_rate` | Container runtime operation errors per second (alert if > 0) |
+| `pod_start_p99_ms` | Pod startup latency p99 in ms (alert if > 30000) |
+| `running_pods` | Number of running pods on this node |
+| `running_containers` | Number of running containers on this node |
+| `evictions_rate` | Pod evictions per second (alert if > 0) |
+| `cert_ttl_seconds` | Kubelet certificate TTL in seconds |
+
+#### CoreDNS Health (7 datapoints)
+| Metric | Description |
+|--------|-------------|
+| `request_rate` | DNS requests per second |
+| `request_duration_p99_ms` | DNS request duration p99 in ms (alert if > 500) |
+| `servfail_rate` | SERVFAIL responses per second (alert if > 0) |
+| `nxdomain_rate` | NXDOMAIN responses per second |
+| `cache_hit_ratio_pct` | DNS cache hit ratio percentage |
+| `forward_error_rate` | DNS forward errors per second (alert if > 0) |
+| `panics_total` | CoreDNS panic count (alert if > 0) |
+
+#### OVN Network Health (7 datapoints)
+| Metric | Description |
+|--------|-------------|
+| `cni_request_p99_ms` | CNI add/del request latency p99 in ms (alert if > 5000) |
+| `ovs_rx_dropped_rate` | OVS received packets dropped per second (alert if > 0) |
+| `ovs_tx_dropped_rate` | OVS transmitted packets dropped per second (alert if > 0) |
+| `ovs_rx_errors_rate` | OVS receive errors per second (alert if > 0) |
+| `ovs_tx_errors_rate` | OVS transmit errors per second (alert if > 0) |
+| `southbound_db_connected` | Southbound DB connection status, 1=connected (alert if < 1) |
+| `sb_disconnects_rate` | Southbound DB disconnection events per second (alert if > 0) |
+
+#### ResourceQuota Usage (8 datapoints)
+| Metric | Description |
+|--------|-------------|
+| `cpu_used` | CPU cores currently used by the namespace |
+| `cpu_hard` | CPU core limit (hard quota) for the namespace |
+| `cpu_pct` | CPU quota utilization percentage (alert if > 90) |
+| `memory_used` | Memory bytes currently used by the namespace |
+| `memory_hard` | Memory byte limit (hard quota) for the namespace |
+| `memory_pct` | Memory quota utilization percentage (alert if > 90) |
+| `pods_used` | Number of pods in the namespace |
+| `pods_hard` | Pod count limit (hard quota) for the namespace |
+
 ### Instance Properties (OCP)
 
 | Property | Description | Example |
 |----------|-------------|---------|
 | `auto.operator.name` | ClusterOperator name | `authentication` |
 | `auto.node.instance` | CRI-O node instance endpoint | `10.1.14.10:9637` |
-| `auto.node.name` | Node hostname | `ip-10-55-117-247.us-west-2.compute.internal` |
+| `auto.node.name` | Node hostname (Kubelet_Health, Image_Pull_Health) | `ip-10-55-117-247.us-west-2.compute.internal` |
 | `auto.route.name` | HAProxy route name | `console` |
 | `auto.route.namespace` | Route namespace (ILP grouping) | `openshift-console` |
+| `auto.quota.namespace` | Namespace with ResourceQuota (ILP grouping) | `my-app` |
 
 ---
 
@@ -306,7 +419,7 @@ DataSource files are located in `datasources/etcd/`.
 
 Monitors OpenShift Virtualization (KubeVirt/CNV) virtual machine instances. Requires CNV to be installed on the cluster.
 
-For the full setup walkthrough, see the [Setup Guide](documentation/setup-guide.md).
+For the full setup walkthrough, see the [Setup Guide](documentation/KubeVirt_Monitoring_Setup_Guide.docx).
 
 DataSource files are located in `datasources/kubevirt/`.
 
@@ -645,6 +758,222 @@ DataSource files are located in `datasources/acm/`.
 
 ---
 
+## GitOps DataSources (5)
+
+Monitors ArgoCD / OpenShift GitOps deployments: application sync status, fleet-level health distribution, controller reconciliation performance, git repo server operations, and API server/backend metrics. Requires the OpenShift GitOps operator (or upstream ArgoCD) to be installed on the cluster.
+
+DataSource files are located in `datasources/gitops/`.
+
+### DataSource Inventory
+
+| DataSource | Instances | Collection | Discovery | Datapoints | Description |
+|------------|-----------|------------|-----------|------------|-------------|
+| ArgoCD_Sync_Overview | 1 (fleet) | 1 min | 15 min | 7 | Fleet-wide app counts by sync/health status, sync operation rates |
+| ArgoCD_Application_Health | Per application | 1 min | 15 min | 4 | Per-app sync status, health status, reconciliation count and p95 latency |
+| ArgoCD_Controller_Performance | 1 (controller) | 1 min | 15 min | 6 | Reconciliation latency percentiles (p50/p95/p99), error rate, queue depth |
+| ArgoCD_Repo_Server | 1 (repo server) | 1 min | 15 min | 5 | Git request/fetch rates, latency percentiles, error rate |
+| ArgoCD_Server_Metrics | 1 (API server) | 1 min | 15 min | 6 | gRPC request/error rates, Redis latency, notification delivery health |
+
+**Total: 28 datapoints across 5 DataSources.**
+
+- **appliesTo**: `hasCategory("OpenShift_GitOps")`
+- **Group**: `GitOps`
+- **ILP Grouping**: Application_Health groups by `auto.app.project`
+
+### Metrics Collected (GitOps)
+
+#### Sync Overview (7 datapoints)
+| Metric | Description |
+|--------|-------------|
+| `total_apps` | Total number of ArgoCD-managed applications |
+| `synced_apps` | Applications with sync status Synced |
+| `out_of_sync_apps` | Applications with sync status OutOfSync (alert if > 0) |
+| `healthy_apps` | Applications with health status Healthy |
+| `degraded_apps` | Applications with health status Degraded (alert if > 0) |
+| `sync_success_rate` | Successful sync operations per second (5m rate) |
+| `sync_failure_rate` | Failed sync operations per second (alert if > 0) |
+
+#### Application Health (4 datapoints)
+| Metric | Description |
+|--------|-------------|
+| `sync_status` | Application sync status: 1=Synced, 0=OutOfSync (alert if < 1) |
+| `health_status` | Application health: 1=Healthy, 2=Degraded, 3=Missing, 0=Unknown |
+| `reconcile_count` | Reconciliation operations per second (5m rate) |
+| `p95_reconcile_ms` | 95th percentile reconciliation duration in ms (alert if > 60000) |
+
+#### Controller Performance (6 datapoints)
+| Metric | Description |
+|--------|-------------|
+| `p50_reconcile_ms` | 50th percentile reconciliation duration in ms |
+| `p95_reconcile_ms` | 95th percentile reconciliation duration in ms (alert if > 30000) |
+| `p99_reconcile_ms` | 99th percentile reconciliation duration in ms (alert if > 60000) |
+| `reconcile_rate` | Total reconciliation operations per second (5m rate) |
+| `reconcile_error_rate` | Reconciliation errors per second (alert if > 5) |
+| `workqueue_depth` | Application controller work queue depth (alert if > 100) |
+
+#### Repo Server (5 datapoints)
+| Metric | Description |
+|--------|-------------|
+| `git_request_rate` | Total git requests per second (5m rate) |
+| `git_fetch_rate` | Git fetch requests per second (5m rate) |
+| `p95_git_duration_ms` | 95th percentile git request duration in ms (alert if > 30000) |
+| `p99_git_duration_ms` | 99th percentile git request duration in ms (alert if > 60000) |
+| `git_error_rate` | Git request errors per second (alert if > 0) |
+
+#### Server Metrics (6 datapoints)
+| Metric | Description |
+|--------|-------------|
+| `grpc_request_rate` | gRPC requests handled per second (5m rate) |
+| `grpc_error_rate` | gRPC request errors per second (alert if > 5) |
+| `redis_request_rate` | Redis requests per second (5m rate) |
+| `p95_redis_latency_ms` | 95th percentile Redis request latency in ms (alert if > 500) |
+| `notification_delivery_rate` | Notification deliveries per second (5m rate) |
+| `notification_failure_rate` | Notification delivery failures per second (alert if > 0) |
+
+### Instance Properties (GitOps)
+
+| Property | Description | Example |
+|----------|-------------|---------|
+| `auto.app.name` | ArgoCD application name | `my-web-app` |
+| `auto.app.project` | ArgoCD project (ILP grouping) | `default` |
+| `auto.app.namespace` | ArgoCD controller namespace | `openshift-gitops` |
+| `auto.app.dest_namespace` | Application destination namespace | `production` |
+
+---
+
+## Portworx DataSources (9)
+
+Monitors Portworx Enterprise storage deployments: cluster health and quorum, per-node status, per-volume health/performance/replication, per-pool and per-disk I/O performance, KVDB consensus health, and Autopilot automation status. Requires Portworx Enterprise to be installed on the cluster with metrics exposed to Prometheus.
+
+DataSource files are located in `datasources/portworx/`.
+
+### DataSource Inventory
+
+| DataSource | Instances | Collection | Discovery | Datapoints | Description |
+|------------|-----------|------------|-----------|------------|-------------|
+| Portworx_Cluster_Overview | 1 (cluster) | 1 min | 15 min | 12 | Quorum, node counts, storage capacity, CPU/memory utilization, pending I/O |
+| Portworx_Node_Status | Per node | 1 min | 15 min | 3 | Per-node status, network health, storage health |
+| Portworx_Volume_Health | Per volume | 1 min | 15 min | 6 | Volume capacity, HA level, status, utilization |
+| Portworx_Volume_Performance | Per volume | 1 min | 15 min | 7 | Read/write IOPS, throughput, latency, I/O depth |
+| Portworx_Volume_Replication | Per volume | 1 min | 15 min | 4 | HA level, replication status, resync progress, replica sets |
+| Portworx_Pool_Performance | Per pool | 1 min | 15 min | 7 | Pool capacity, utilization, provisioned bytes, IOPS, throughput |
+| Portworx_Disk_Performance | Per disk | 1 min | 15 min | 8 | Disk read/write IOPS, throughput, latency, I/O depth, used bytes |
+| Portworx_KVDB_Health | 1 (KVDB) | 1 min | 15 min | 4 | KVDB member counts, disk sync latency |
+| Portworx_Autopilot_Health | 1 (autopilot) | 1 min | 15 min | 3 | Active rules, rebalance status, capacity events |
+
+**Total: 54 datapoints across 9 DataSources.**
+
+- **appliesTo**: `hasCategory("OpenShift_Portworx")`
+- **Group**: `Portworx`
+- **ILP Grouping**: Pool_Performance and Disk_Performance group by `auto.pool.node` / `auto.disk.node`
+
+### Metrics Collected (Portworx)
+
+#### Cluster Overview (12 datapoints)
+| Metric | Description |
+|--------|-------------|
+| `quorum_status` | Cluster quorum status: 1=in quorum, 0=not (alert if < 1) |
+| `cluster_size` | Total number of nodes in the cluster |
+| `nodes_online` | Number of online nodes |
+| `nodes_offline` | Number of offline nodes (alert if > 0) |
+| `storage_nodes_online` | Number of online storage nodes |
+| `total_bytes` | Total cluster storage capacity in bytes |
+| `used_bytes` | Used cluster storage in bytes |
+| `available_bytes` | Available cluster storage in bytes |
+| `used_percent` | Cluster storage utilization percentage (alert if > 85) |
+| `cpu_percent` | Average cluster CPU utilization (alert if > 90) |
+| `memory_percent` | Average cluster memory utilization (alert if > 90) |
+| `pending_io` | Bytes of pending I/O operations |
+
+#### Node Status (3 datapoints)
+| Metric | Description |
+|--------|-------------|
+| `status` | Node status: 1=online, 0=offline (alert if < 1) |
+| `network_status` | Node network health: 1=healthy, 0=degraded (alert if < 1) |
+| `storage_status` | Node storage status: 1=up, 0=down (alert if < 1) |
+
+#### Volume Health (6 datapoints)
+| Metric | Description |
+|--------|-------------|
+| `capacity_bytes` | Volume capacity in bytes |
+| `ha_level` | Volume HA replication level |
+| `vol_status` | Volume status: 1=attached, 0=detached |
+| `used_bytes` | Volume used bytes |
+| `available_bytes` | Volume available bytes |
+| `used_percent` | Volume utilization percentage (alert if > 85) |
+
+#### Volume Performance (7 datapoints)
+| Metric | Description |
+|--------|-------------|
+| `read_iops` | Volume read operations per second (5m rate) |
+| `write_iops` | Volume write operations per second (5m rate) |
+| `read_throughput` | Volume read throughput in bytes per second |
+| `write_throughput` | Volume write throughput in bytes per second |
+| `read_latency_ms` | Volume read latency in milliseconds (alert if > 50) |
+| `write_latency_ms` | Volume write latency in milliseconds (alert if > 50) |
+| `io_depth` | In-flight I/O operations on the volume device |
+
+#### Volume Replication (4 datapoints)
+| Metric | Description |
+|--------|-------------|
+| `ha_level` | Volume HA replication level |
+| `repl_status` | Replication status: 1=up to date, 0=resyncing (alert if < 1) |
+| `resync_progress` | Replication resync progress percentage (0-100) |
+| `repl_sets_online` | Number of online replica sets for the volume |
+
+#### Pool Performance (7 datapoints)
+| Metric | Description |
+|--------|-------------|
+| `total_bytes` | Pool total capacity in bytes |
+| `used_bytes` | Pool used capacity in bytes |
+| `available_bytes` | Pool available capacity in bytes |
+| `used_percent` | Pool utilization percentage (alert if > 85) |
+| `provisioned_bytes` | Pool provisioned capacity in bytes |
+| `iops` | Pool combined IOPS (read + write) |
+| `throughput` | Pool throughput in bytes per second |
+
+#### Disk Performance (8 datapoints)
+| Metric | Description |
+|--------|-------------|
+| `read_iops` | Disk read operations per second (5m rate) |
+| `write_iops` | Disk write operations per second (5m rate) |
+| `read_throughput` | Disk read throughput in bytes per second |
+| `write_throughput` | Disk write throughput in bytes per second |
+| `read_latency_ms` | Disk read latency in milliseconds (alert if > 50) |
+| `write_latency_ms` | Disk write latency in milliseconds (alert if > 50) |
+| `io_depth` | In-progress I/O operations on the disk |
+| `used_bytes` | Disk used bytes |
+
+#### KVDB Health (4 datapoints)
+| Metric | Description |
+|--------|-------------|
+| `kvdb_up_count` | Number of KVDB members reporting as up |
+| `disk_sync_latency_ms` | KVDB disk sync latency in ms (alert if > 1000) |
+| `members_online` | Number of KVDB members online |
+| `members_total` | Total number of KVDB members in the cluster |
+
+#### Autopilot Health (3 datapoints)
+| Metric | Description |
+|--------|-------------|
+| `rules_active` | Number of active Autopilot rules |
+| `rebalance_status` | Rebalance operations in progress: 1=active, 0=idle |
+| `capacity_events` | Capacity management events per second (5m rate) |
+
+### Instance Properties (Portworx)
+
+| Property | Description | Example |
+|----------|-------------|---------|
+| `auto.node.id` | Portworx node ID | `px-node-01` |
+| `auto.node.name` | Portworx node hostname | `worker-1.ocp.example.com` |
+| `auto.volume.id` | Portworx volume ID | `1234567890` |
+| `auto.volume.name` | Portworx volume name | `pvc-abc123` |
+| `auto.pool.id` | Storage pool ID | `0` |
+| `auto.pool.node` | Pool host node (ILP grouping) | `worker-1` |
+| `auto.disk.device` | Disk device path | `/dev/sdb` |
+| `auto.disk.node` | Disk host node (ILP grouping) | `worker-1` |
+
+---
+
 ## Thanos PromQL Collector (1)
 
 A generic, configurable DataSource that executes arbitrary PromQL queries against any Thanos endpoint. Queries are defined entirely through device properties, so no code changes are needed to add new metrics. This DataSource is standalone and not part of any suite group.
@@ -700,8 +1029,11 @@ openshift.thanos.query.2.group = apiserver
 - **KubeVirt suite**: OpenShift 4.12+ with OpenShift Virtualization (KubeVirt/CNV) installed
 - **ODF suite**: OpenShift 4.12+ with OpenShift Data Foundation (ODF/Ceph) installed
 - **ACM suite**: OpenShift 4.12+ with Advanced Cluster Management 2.8+ installed (hub cluster only)
+- **GitOps suite**: OpenShift 4.12+ with OpenShift GitOps operator (ArgoCD) installed
+- **Portworx suite**: OpenShift 4.12+ with Portworx Enterprise installed and metrics exposed to Prometheus
 - **PromQL Collector**: Any Thanos Querier endpoint accessible over HTTPS
-- LogicMonitor Collector with network access to the Thanos endpoint
+- **Nexus suite**: Sonatype Nexus Repository Manager 3.x with REST API enabled
+- LogicMonitor Collector with network access to the Thanos endpoint (port 443 or 9091) and/or Nexus endpoint (port 8081)
 - Service account with `cluster-monitoring-view` role (recommended: dedicated `logicmonitor-thanos-reader` SA)
 
 ## Token Rotation
