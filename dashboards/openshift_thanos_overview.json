@@ -1,0 +1,363 @@
+{
+  "name": "OpenShift Thanos Overview",
+  "description": "Executive health snapshot across all OpenShift monitoring suites (OCP, Etcd, KubeVirt, ODF, ACM, GitOps, Portworx). Widgets use hasCategory() filters so the dashboard auto-binds to tagged devices on import.",
+  "sharable": true,
+  "groupName": "OpenShift Thanos Monitoring",
+  "groupFullPath": "OpenShift Thanos Monitoring",
+  "overwriteGroupFields": false,
+  "widgetTokens": [],
+  "defaultDashboardFilters": {
+    "defaultDashboardFilterDetails": []
+  },
+  "widgetsConfig": {},
+  "template": null,
+  "widgets_full": [
+    {
+      "name": "OpenShift Thanos Overview",
+      "description": "Executive summary header",
+      "type": "text",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "content": "<h2>OpenShift Thanos Monitoring Suite</h2><p>Executive health snapshot across all deployed OpenShift monitoring suites. Each tile shows the current cluster-level health signal from the corresponding Thanos-backed DataSource. Tiles turn red when attention is needed.</p><p><strong>Suites covered:</strong> OCP (OperatorHub) &middot; Etcd &middot; KubeVirt &middot; OpenShift Data Foundation &middot; Advanced Cluster Management &middot; GitOps (ArgoCD) &middot; Portworx</p><p><strong>Source:</strong> PromQL queries against each cluster's Thanos Querier. Devices auto-bind to widgets via <code>system.categories</code> set by the <code>addCategory_OpenShift_Thanos</code> PropertySource.</p>"
+    },
+    {
+      "name": "OCP Operators Degraded",
+      "description": "Count of degraded ClusterOperators across all OCP clusters (0 = healthy)",
+      "type": "bigNumber",
+      "theme": "borderPurple",
+      "interval": 5,
+      "timescale": "day",
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "OCP Operator Overview (OCP_Operator_Overview)",
+            "instanceName": "*",
+            "dataPointName": "operators_degraded",
+            "name": "operators_degraded",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "operators_degraded",
+            "bottomLabel": "",
+            "rightLabel": "Degraded Operators",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "Etcd Leaders Active",
+      "description": "Active etcd leaders across clusters (must equal number of clusters)",
+      "type": "bigNumber",
+      "theme": "borderPurple",
+      "interval": 5,
+      "timescale": "day",
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "Etcd Cluster Overview (Etcd_Cluster_Overview)",
+            "instanceName": "*",
+            "dataPointName": "leaders_active",
+            "name": "leaders_active",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "leaders_active",
+            "bottomLabel": "",
+            "rightLabel": "Etcd Leaders Active",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "KubeVirt System Health",
+      "description": "HyperConverged Operator health state aggregated across clusters (0 = healthy)",
+      "type": "bigNumber",
+      "theme": "borderPurple",
+      "interval": 5,
+      "timescale": "day",
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "KubeVirt Cluster Overview (KubeVirt_Cluster_Overview)",
+            "instanceName": "*",
+            "dataPointName": "system_health",
+            "name": "system_health",
+            "aggregateFunction": "max"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "system_health",
+            "bottomLabel": "",
+            "rightLabel": "KubeVirt Health (0=OK)",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "ODF Ceph Health",
+      "description": "Ceph cluster health enum across ODF clusters (0=OK, 1=WARN, 2=ERR)",
+      "type": "bigNumber",
+      "theme": "borderPurple",
+      "interval": 5,
+      "timescale": "day",
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "ODF Ceph Cluster Overview (ODF_Ceph_Cluster_Overview)",
+            "instanceName": "*",
+            "dataPointName": "health_status",
+            "name": "health_status",
+            "aggregateFunction": "max"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "health_status",
+            "bottomLabel": "",
+            "rightLabel": "Ceph Health (0=OK)",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "ACM Clusters Unavailable",
+      "description": "Managed clusters where Available condition is not true",
+      "type": "bigNumber",
+      "theme": "borderPurple",
+      "interval": 5,
+      "timescale": "day",
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "ACM Hub Overview (ACM_Hub_Overview)",
+            "instanceName": "*",
+            "dataPointName": "clusters_unavailable",
+            "name": "clusters_unavailable",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "clusters_unavailable",
+            "bottomLabel": "",
+            "rightLabel": "Unavailable Managed Clusters",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "GitOps Apps Out of Sync",
+      "description": "ArgoCD applications with OutOfSync status across the fleet",
+      "type": "bigNumber",
+      "theme": "borderPurple",
+      "interval": 5,
+      "timescale": "day",
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "ArgoCD Sync Overview (ArgoCD_Sync_Overview)",
+            "instanceName": "*",
+            "dataPointName": "out_of_sync_apps",
+            "name": "out_of_sync_apps",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "out_of_sync_apps",
+            "bottomLabel": "",
+            "rightLabel": "ArgoCD Apps Out of Sync",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "Portworx Quorum Status",
+      "description": "Portworx cluster quorum health (1 per healthy cluster, 0 when quorum lost)",
+      "type": "bigNumber",
+      "theme": "borderPurple",
+      "interval": 5,
+      "timescale": "day",
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "Portworx Cluster Overview (Portworx_Cluster_Overview)",
+            "instanceName": "*",
+            "dataPointName": "quorum_status",
+            "name": "quorum_status",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "quorum_status",
+            "bottomLabel": "",
+            "rightLabel": "Portworx Clusters in Quorum",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "ODF Ceph Capacity Used",
+      "description": "Ceph cluster fill level (% used of total raw capacity)",
+      "type": "gauge",
+      "theme": "borderPurple",
+      "interval": 5,
+      "timescale": "day",
+      "showPeak": false,
+      "peakTimeRange": "30days",
+      "legend": "used_percent",
+      "maxValue": 100.0,
+      "minValue": 0.0,
+      "dataPoint": {
+        "deviceGroupFullPath": "*",
+        "deviceDisplayName": "*",
+        "dataSourceFullName": "ODF Ceph Cluster Overview (ODF_Ceph_Cluster_Overview)",
+        "instanceName": "*",
+        "dataPointName": "used_percent",
+        "aggregateFunction": "average",
+        "dataSeries": "average",
+        "rpn": "used_percent"
+      },
+      "colorThresholds": null,
+      "displayType": 0,
+      "displayUnit": ""
+    },
+    {
+      "name": "Portworx Capacity Used",
+      "description": "Portworx cluster fill level (% used of total storage)",
+      "type": "gauge",
+      "theme": "borderPurple",
+      "interval": 5,
+      "timescale": "day",
+      "showPeak": false,
+      "peakTimeRange": "30days",
+      "legend": "used_percent",
+      "maxValue": 100.0,
+      "minValue": 0.0,
+      "dataPoint": {
+        "deviceGroupFullPath": "*",
+        "deviceDisplayName": "*",
+        "dataSourceFullName": "Portworx Cluster Overview (Portworx_Cluster_Overview)",
+        "instanceName": "*",
+        "dataPointName": "used_percent",
+        "aggregateFunction": "average",
+        "dataSeries": "average",
+        "rpn": "used_percent"
+      },
+      "colorThresholds": null,
+      "displayType": 0,
+      "displayUnit": ""
+    },
+    {
+      "name": "Active Alerts - OpenShift Thanos Suites",
+      "description": "Live alerts from all OpenShift Thanos suite DataSources. On import, scope 'Resource Group' filter to your OpenShift device group for tenant isolation.",
+      "type": "alert",
+      "theme": "borderPurple",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {
+        "isShowAll": false,
+        "showFilter": true,
+        "columns": [
+          {"visible": true, "columnLabel": "Severity", "columnKey": "alert-severity"},
+          {"visible": true, "columnLabel": "Began", "columnKey": "alert-began"},
+          {"visible": true, "columnLabel": "Resource/Website", "columnKey": "alert-device"},
+          {"visible": true, "columnLabel": "LogicModule", "columnKey": "alert-datasource"},
+          {"visible": true, "columnLabel": "Instance", "columnKey": "alert-datasource-instance"},
+          {"visible": true, "columnLabel": "Datapoint", "columnKey": "alert-datapoint"},
+          {"visible": true, "columnLabel": "Value", "columnKey": "alert-value"},
+          {"visible": true, "columnLabel": "Static Threshold", "columnKey": "alert-static-threshold"}
+        ],
+        "fontsize": "normal-font",
+        "sort": "-startEpoch"
+      },
+      "filters": {
+        "group": "*",
+        "host": "",
+        "dataSource": "",
+        "instance": "",
+        "dataPoint": "",
+        "severity": "",
+        "acked": "all",
+        "sdted": "all",
+        "rule": "",
+        "chain": "",
+        "cleared": "no",
+        "keyword": "",
+        "dependencyRole": "",
+        "dependencyRoutingState": "",
+        "anomaly": "all"
+      }
+    }
+  ]
+}
