@@ -8,7 +8,7 @@ LogicMonitor dashboards that visualize metrics and alerts from the Thanos DataSo
 |------|------|--------|--------|
 | `openshift_thanos_overview.json` | OpenShift Thanos Overview | Executive health snapshot across all 7 OpenShift suites | Available |
 | `openshift_platform_health.json` | OpenShift Platform Health | OCP + Etcd deep dive (control plane, scheduler, etcd quorum + perf, certs) | Available |
-| `openshift_storage.json` | OpenShift Storage | ODF + Portworx | Planned |
+| `openshift_storage.json` | OpenShift Storage | ODF (Ceph + NooBaa + Rook) + Portworx (cluster + KVDB + Autopilot) with capacity gauges | Available |
 | `openshift_application_delivery.json` | OpenShift Application Delivery | GitOps + KubeVirt | Planned |
 | `multi_cluster_fleet.json` | Multi-Cluster Fleet | ACM hub + managed clusters | Planned |
 | `active_alerts.json` | Active Alerts | Live alerts across suites, severity-tabbed | Planned |

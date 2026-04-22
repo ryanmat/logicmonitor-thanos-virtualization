@@ -1,0 +1,1042 @@
+{
+  "name": "OpenShift Storage",
+  "description": "Storage team view across OpenShift Data Foundation (Ceph + NooBaa + Rook) and Portworx. Covers cluster health, placement groups, OSDs, object gateway, Portworx cluster and KVDB, plus capacity utilization.",
+  "sharable": true,
+  "groupName": "OpenShift Thanos Monitoring",
+  "groupFullPath": "OpenShift Thanos Monitoring",
+  "overwriteGroupFields": false,
+  "widgetTokens": [],
+  "defaultDashboardFilters": {
+    "defaultDashboardFilterDetails": []
+  },
+  "widgetsConfig": {
+    "6678": {
+      "col": 1,
+      "sizex": 12,
+      "row": 1,
+      "sizey": 4
+    },
+    "6679": {
+      "col": 1,
+      "sizex": 3,
+      "row": 5,
+      "sizey": 4
+    },
+    "6680": {
+      "col": 4,
+      "sizex": 3,
+      "row": 5,
+      "sizey": 4
+    },
+    "6681": {
+      "col": 7,
+      "sizex": 3,
+      "row": 5,
+      "sizey": 4
+    },
+    "6682": {
+      "col": 10,
+      "sizex": 3,
+      "row": 5,
+      "sizey": 4
+    },
+    "6683": {
+      "col": 1,
+      "sizex": 3,
+      "row": 9,
+      "sizey": 4
+    },
+    "6684": {
+      "col": 4,
+      "sizex": 3,
+      "row": 9,
+      "sizey": 4
+    },
+    "6685": {
+      "col": 7,
+      "sizex": 3,
+      "row": 9,
+      "sizey": 4
+    },
+    "6686": {
+      "col": 10,
+      "sizex": 3,
+      "row": 9,
+      "sizey": 4
+    },
+    "6687": {
+      "col": 1,
+      "sizex": 3,
+      "row": 13,
+      "sizey": 4
+    },
+    "6688": {
+      "col": 4,
+      "sizex": 3,
+      "row": 13,
+      "sizey": 4
+    },
+    "6689": {
+      "col": 7,
+      "sizex": 3,
+      "row": 13,
+      "sizey": 4
+    },
+    "6690": {
+      "col": 10,
+      "sizex": 3,
+      "row": 13,
+      "sizey": 4
+    },
+    "6691": {
+      "col": 1,
+      "sizex": 3,
+      "row": 17,
+      "sizey": 4
+    },
+    "6692": {
+      "col": 4,
+      "sizex": 3,
+      "row": 17,
+      "sizey": 4
+    },
+    "6693": {
+      "col": 7,
+      "sizex": 3,
+      "row": 17,
+      "sizey": 4
+    },
+    "6694": {
+      "col": 10,
+      "sizex": 3,
+      "row": 17,
+      "sizey": 4
+    },
+    "6695": {
+      "col": 1,
+      "sizex": 3,
+      "row": 21,
+      "sizey": 4
+    },
+    "6696": {
+      "col": 4,
+      "sizex": 3,
+      "row": 21,
+      "sizey": 4
+    },
+    "6697": {
+      "col": 7,
+      "sizex": 3,
+      "row": 21,
+      "sizey": 4
+    },
+    "6698": {
+      "col": 10,
+      "sizex": 3,
+      "row": 21,
+      "sizey": 4
+    },
+    "6699": {
+      "col": 1,
+      "sizex": 6,
+      "row": 25,
+      "sizey": 6
+    },
+    "6700": {
+      "col": 7,
+      "sizex": 6,
+      "row": 25,
+      "sizey": 6
+    },
+    "6701": {
+      "col": 1,
+      "sizex": 12,
+      "row": 31,
+      "sizey": 8
+    }
+  },
+  "template": null,
+  "widgets_full": [
+    {
+      "id": 6678,
+      "name": "OpenShift Storage",
+      "description": "Storage header",
+      "type": "text",
+      "theme": "newSolidGray",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "content": "<h2>OpenShift Storage</h2><p>Consolidated view of persistent storage layers: OpenShift Data Foundation (Ceph block + file + RGW, plus NooBaa S3 gateway) and Portworx. Designed for storage admins watching fleet capacity, degraded placement groups, OSD/node availability, and commit latency.</p><p><strong>Sections:</strong> Ceph cluster health &middot; Placement groups &amp; NooBaa &middot; OSDs &amp; Ceph monitors &middot; Portworx cluster &middot; KVDB &amp; Autopilot &middot; Capacity gauges &middot; Active storage alerts</p><p><strong>Source:</strong> PromQL queries via Thanos Querier on each cluster. Devices auto-bind via categories <code>OpenShift_ODF</code> and <code>OpenShift_Portworx</code>.</p>"
+    },
+    {
+      "id": 6679,
+      "name": "Ceph Health Status",
+      "description": "Ceph cluster health enum (0=OK, 1=WARN, 2=ERR) worst across fleet",
+      "type": "bigNumber",
+      "theme": "newBorderDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "ODF Ceph Cluster Overview (ODF_Ceph_Cluster_Overview)",
+            "instanceName": "*",
+            "dataPointName": "health_status",
+            "name": "health_status",
+            "aggregateFunction": "max"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "health_status",
+            "bottomLabel": "",
+            "rightLabel": "Ceph Health (0=OK)",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6680,
+      "name": "Ceph Capacity Used",
+      "description": "Ceph cluster fill percentage (average across clusters)",
+      "type": "bigNumber",
+      "theme": "newBorderDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "ODF Ceph Cluster Overview (ODF_Ceph_Cluster_Overview)",
+            "instanceName": "*",
+            "dataPointName": "used_percent",
+            "name": "used_percent",
+            "aggregateFunction": "average"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "used_percent",
+            "bottomLabel": "",
+            "rightLabel": "Ceph Used %",
+            "position": 1,
+            "rounding": 2,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6681,
+      "name": "Ceph Read Ops/s",
+      "description": "Fleet-wide Ceph read operations per second",
+      "type": "bigNumber",
+      "theme": "newBorderDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "ODF Ceph Cluster Overview (ODF_Ceph_Cluster_Overview)",
+            "instanceName": "*",
+            "dataPointName": "read_ops_per_sec",
+            "name": "read_ops_per_sec",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "read_ops_per_sec",
+            "bottomLabel": "",
+            "rightLabel": "Ceph Read Ops/s",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": true,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6682,
+      "name": "Ceph Write Ops/s",
+      "description": "Fleet-wide Ceph write operations per second",
+      "type": "bigNumber",
+      "theme": "newBorderDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "ODF Ceph Cluster Overview (ODF_Ceph_Cluster_Overview)",
+            "instanceName": "*",
+            "dataPointName": "write_ops_per_sec",
+            "name": "write_ops_per_sec",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "write_ops_per_sec",
+            "bottomLabel": "",
+            "rightLabel": "Ceph Write Ops/s",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": true,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6683,
+      "name": "PGs Degraded",
+      "description": "Ceph placement groups in degraded state across the fleet (should stay at 0)",
+      "type": "bigNumber",
+      "theme": "newBorderDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "ODF Ceph PG Status (ODF_Ceph_PG_Status)",
+            "instanceName": "*",
+            "dataPointName": "degraded",
+            "name": "degraded",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "degraded",
+            "bottomLabel": "",
+            "rightLabel": "PGs Degraded",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6684,
+      "name": "PGs Active",
+      "description": "Ceph placement groups in active state across the fleet",
+      "type": "bigNumber",
+      "theme": "newBorderDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "ODF Ceph PG Status (ODF_Ceph_PG_Status)",
+            "instanceName": "*",
+            "dataPointName": "active",
+            "name": "active",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "active",
+            "bottomLabel": "",
+            "rightLabel": "PGs Active",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": true,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6685,
+      "name": "NooBaa Unhealthy Buckets",
+      "description": "NooBaa S3 gateway buckets reporting unhealthy state",
+      "type": "bigNumber",
+      "theme": "newBorderDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "ODF NooBaa Health (ODF_NooBaa_Health)",
+            "instanceName": "*",
+            "dataPointName": "unhealthy_buckets",
+            "name": "unhealthy_buckets",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "unhealthy_buckets",
+            "bottomLabel": "",
+            "rightLabel": "NooBaa Unhealthy Buckets",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6686,
+      "name": "NooBaa System Health",
+      "description": "NooBaa S3 gateway overall system health (0 = healthy)",
+      "type": "bigNumber",
+      "theme": "newBorderDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "ODF NooBaa Health (ODF_NooBaa_Health)",
+            "instanceName": "*",
+            "dataPointName": "system_health",
+            "name": "system_health",
+            "aggregateFunction": "max"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "system_health",
+            "bottomLabel": "",
+            "rightLabel": "NooBaa Health (0=OK)",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6687,
+      "name": "OSDs Down",
+      "description": "Ceph OSDs reporting Down across all clusters (should stay at 0)",
+      "type": "bigNumber",
+      "theme": "newBorderDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "ODF Rook Operator Health (ODF_Rook_Operator_Health)",
+            "instanceName": "*",
+            "dataPointName": "osd_down_count",
+            "name": "osd_down_count",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "osd_down_count",
+            "bottomLabel": "",
+            "rightLabel": "OSDs Down",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6688,
+      "name": "OSDs Out",
+      "description": "Ceph OSDs marked Out (no data placement) across all clusters",
+      "type": "bigNumber",
+      "theme": "newBorderDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "ODF Rook Operator Health (ODF_Rook_Operator_Health)",
+            "instanceName": "*",
+            "dataPointName": "osd_out_count",
+            "name": "osd_out_count",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "osd_out_count",
+            "bottomLabel": "",
+            "rightLabel": "OSDs Out",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6689,
+      "name": "Ceph Mon Quorum",
+      "description": "Ceph monitor quorum count (typically 3 per cluster)",
+      "type": "bigNumber",
+      "theme": "newBorderDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "ODF Rook Operator Health (ODF_Rook_Operator_Health)",
+            "instanceName": "*",
+            "dataPointName": "mon_quorum_count",
+            "name": "mon_quorum_count",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "mon_quorum_count",
+            "bottomLabel": "",
+            "rightLabel": "Ceph Mons in Quorum",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6690,
+      "name": "Ceph OSD Apply Latency",
+      "description": "Worst OSD apply latency across the fleet (disk write signal)",
+      "type": "bigNumber",
+      "theme": "newBorderDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "ODF Ceph OSD Performance (ODF_Ceph_OSD_Performance)",
+            "instanceName": "*",
+            "dataPointName": "apply_latency_ms",
+            "name": "apply_latency_ms",
+            "aggregateFunction": "max"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "apply_latency_ms",
+            "bottomLabel": "",
+            "rightLabel": "OSD Apply Latency (ms)",
+            "position": 1,
+            "rounding": 1,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6691,
+      "name": "Portworx Quorum Status",
+      "description": "Portworx clusters in quorum (1 per healthy cluster)",
+      "type": "bigNumber",
+      "theme": "newBorderDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "Portworx Cluster Overview (Portworx_Cluster_Overview)",
+            "instanceName": "*",
+            "dataPointName": "quorum_status",
+            "name": "quorum_status",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "quorum_status",
+            "bottomLabel": "",
+            "rightLabel": "PX Clusters in Quorum",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6692,
+      "name": "Portworx Nodes Online",
+      "description": "Portworx nodes reporting Online across the fleet",
+      "type": "bigNumber",
+      "theme": "newBorderDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "Portworx Cluster Overview (Portworx_Cluster_Overview)",
+            "instanceName": "*",
+            "dataPointName": "nodes_online",
+            "name": "nodes_online",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "nodes_online",
+            "bottomLabel": "",
+            "rightLabel": "PX Nodes Online",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6693,
+      "name": "Portworx Nodes Offline",
+      "description": "Portworx nodes reporting Offline across the fleet (should stay at 0)",
+      "type": "bigNumber",
+      "theme": "newBorderDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "Portworx Cluster Overview (Portworx_Cluster_Overview)",
+            "instanceName": "*",
+            "dataPointName": "nodes_offline",
+            "name": "nodes_offline",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "nodes_offline",
+            "bottomLabel": "",
+            "rightLabel": "PX Nodes Offline",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6694,
+      "name": "Portworx Capacity Used",
+      "description": "Portworx capacity used percentage (average across clusters)",
+      "type": "bigNumber",
+      "theme": "newBorderDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "Portworx Cluster Overview (Portworx_Cluster_Overview)",
+            "instanceName": "*",
+            "dataPointName": "used_percent",
+            "name": "used_percent",
+            "aggregateFunction": "average"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "used_percent",
+            "bottomLabel": "",
+            "rightLabel": "PX Capacity Used %",
+            "position": 1,
+            "rounding": 2,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6695,
+      "name": "Portworx KVDB Up",
+      "description": "Portworx KVDB up count across all clusters",
+      "type": "bigNumber",
+      "theme": "newBorderDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "Portworx KVDB Health (Portworx_KVDB_Health)",
+            "instanceName": "*",
+            "dataPointName": "kvdb_up_count",
+            "name": "kvdb_up_count",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "kvdb_up_count",
+            "bottomLabel": "",
+            "rightLabel": "KVDB Up",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6696,
+      "name": "Portworx KVDB Members Online",
+      "description": "Portworx KVDB members online across all clusters",
+      "type": "bigNumber",
+      "theme": "newBorderDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "Portworx KVDB Health (Portworx_KVDB_Health)",
+            "instanceName": "*",
+            "dataPointName": "members_online",
+            "name": "members_online",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "members_online",
+            "bottomLabel": "",
+            "rightLabel": "KVDB Members Online",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6697,
+      "name": "Autopilot Rules Active",
+      "description": "Portworx Autopilot rules currently active across the fleet",
+      "type": "bigNumber",
+      "theme": "newBorderDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "Portworx Autopilot Health (Portworx_Autopilot_Health)",
+            "instanceName": "*",
+            "dataPointName": "rules_active",
+            "name": "rules_active",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "rules_active",
+            "bottomLabel": "",
+            "rightLabel": "Autopilot Rules Active",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6698,
+      "name": "Autopilot Capacity Events",
+      "description": "Portworx Autopilot capacity events across the fleet (scale/rebalance triggers)",
+      "type": "bigNumber",
+      "theme": "newBorderDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "Portworx Autopilot Health (Portworx_Autopilot_Health)",
+            "instanceName": "*",
+            "dataPointName": "capacity_events",
+            "name": "capacity_events",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "capacity_events",
+            "bottomLabel": "",
+            "rightLabel": "Autopilot Capacity Events",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6699,
+      "name": "ODF Ceph Capacity Gauge",
+      "description": "Ceph cluster fill level gauge",
+      "type": "gauge",
+      "theme": "newBorderDarkBlue",
+      "interval": 5,
+      "timescale": "1day",
+      "displaySettings": {},
+      "showPeak": false,
+      "peakTimeRange": "30days",
+      "legend": "used_percent",
+      "maxValue": 100.0,
+      "minValue": 0.0,
+      "dataPoint": {
+        "deviceGroupFullPath": "*",
+        "deviceDisplayName": "*",
+        "dataSourceFullName": "ODF Ceph Cluster Overview (ODF_Ceph_Cluster_Overview)",
+        "instanceName": "*",
+        "dataPointName": "used_percent",
+        "aggregateFunction": "average",
+        "dataSeries": "average",
+        "rpn": "used_percent"
+      },
+      "colorThresholds": null,
+      "displayType": 0,
+      "displayUnit": ""
+    },
+    {
+      "id": 6700,
+      "name": "Portworx Capacity Gauge",
+      "description": "Portworx cluster fill level gauge",
+      "type": "gauge",
+      "theme": "newBorderDarkBlue",
+      "interval": 5,
+      "timescale": "1day",
+      "displaySettings": {},
+      "showPeak": false,
+      "peakTimeRange": "30days",
+      "legend": "used_percent",
+      "maxValue": 100.0,
+      "minValue": 0.0,
+      "dataPoint": {
+        "deviceGroupFullPath": "*",
+        "deviceDisplayName": "*",
+        "dataSourceFullName": "Portworx Cluster Overview (Portworx_Cluster_Overview)",
+        "instanceName": "*",
+        "dataPointName": "used_percent",
+        "aggregateFunction": "average",
+        "dataSeries": "average",
+        "rpn": "used_percent"
+      },
+      "colorThresholds": null,
+      "displayType": 0,
+      "displayUnit": ""
+    },
+    {
+      "id": 6701,
+      "name": "Active Storage Alerts (ODF + Portworx)",
+      "description": "Live alerts scoped to ODF_* and Portworx_* DataSources",
+      "type": "alert",
+      "theme": "newBorderDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {
+        "isShowAll": false,
+        "showFilter": true,
+        "columns": [
+          {
+            "visible": true,
+            "columnLabel": "Severity",
+            "columnKey": "alert-severity"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Began",
+            "columnKey": "alert-began"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Resource/Website",
+            "columnKey": "alert-device"
+          },
+          {
+            "visible": true,
+            "columnLabel": "LogicModule",
+            "columnKey": "alert-datasource"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Instance",
+            "columnKey": "alert-datasource-instance"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Datapoint",
+            "columnKey": "alert-datapoint"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Value",
+            "columnKey": "alert-value"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Static Threshold",
+            "columnKey": "alert-static-threshold"
+          }
+        ],
+        "fontsize": "normal-font",
+        "sort": "-startEpoch"
+      },
+      "filters": {
+        "group": "*",
+        "host": "",
+        "dataSource": "ODF_*,Portworx_*",
+        "instance": "",
+        "dataPoint": "",
+        "severity": "",
+        "acked": "all",
+        "sdted": "all",
+        "rule": "",
+        "chain": "",
+        "cleared": "no",
+        "keyword": "",
+        "dependencyRole": "",
+        "dependencyRoutingState": "",
+        "anomaly": "all"
+      }
+    }
+  ]
+}
