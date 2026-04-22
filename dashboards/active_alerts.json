@@ -1,0 +1,354 @@
+{
+  "name": "Active Alerts - OpenShift Thanos Suite",
+  "description": "Triage-focused cross-suite view of every active alert emitted by the OpenShift Thanos DataSource suite. Severity-scoped tables (critical, error, warning) plus a full unified list across OCP, Etcd, KubeVirt, ODF, ACM, GitOps, and Portworx.",
+  "sharable": true,
+  "groupName": "OpenShift Thanos Monitoring",
+  "groupFullPath": "OpenShift Thanos Monitoring",
+  "overwriteGroupFields": false,
+  "widgetTokens": [],
+  "defaultDashboardFilters": {
+    "defaultDashboardFilterDetails": []
+  },
+  "widgetsConfig": {
+    "6742": {
+      "col": 1,
+      "sizex": 12,
+      "row": 1,
+      "sizey": 4
+    },
+    "6743": {
+      "col": 1,
+      "sizex": 12,
+      "row": 5,
+      "sizey": 8
+    },
+    "6744": {
+      "col": 1,
+      "sizex": 12,
+      "row": 13,
+      "sizey": 8
+    },
+    "6745": {
+      "col": 1,
+      "sizex": 12,
+      "row": 21,
+      "sizey": 8
+    },
+    "6746": {
+      "col": 1,
+      "sizex": 12,
+      "row": 29,
+      "sizey": 12
+    }
+  },
+  "template": null,
+  "widgets_full": [
+    {
+      "id": 6742,
+      "name": "Active Alerts - OpenShift Thanos Suite",
+      "description": "Active alerts header",
+      "type": "text",
+      "theme": "newSolidGray",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "content": "<h2>Active Alerts - OpenShift Thanos Suite</h2><p>Cross-suite live alert triage. Each table filters to one severity tier so on-call can work top-down: <strong>Critical</strong> first, then Error, then Warning. The All Active tab at the bottom is the unfiltered view for full context.</p><p><strong>Suites covered:</strong> OCP &middot; Etcd &middot; KubeVirt &middot; ODF &middot; ACM &middot; GitOps (ArgoCD) &middot; Portworx</p><p><strong>On import:</strong> tables default to all resource groups. Scope the Resource Group filter to your OpenShift device group for tenant isolation.</p>"
+    },
+    {
+      "id": 6743,
+      "name": "Critical Alerts",
+      "description": "Critical-severity live alerts across all 7 OpenShift Thanos suite DataSources",
+      "type": "alert",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {
+        "isShowAll": false,
+        "showFilter": true,
+        "columns": [
+          {
+            "visible": true,
+            "columnLabel": "Severity",
+            "columnKey": "alert-severity"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Began",
+            "columnKey": "alert-began"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Resource/Website",
+            "columnKey": "alert-device"
+          },
+          {
+            "visible": true,
+            "columnLabel": "LogicModule",
+            "columnKey": "alert-datasource"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Instance",
+            "columnKey": "alert-datasource-instance"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Datapoint",
+            "columnKey": "alert-datapoint"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Value",
+            "columnKey": "alert-value"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Static Threshold",
+            "columnKey": "alert-static-threshold"
+          }
+        ],
+        "fontsize": "normal-font",
+        "sort": "-startEpoch"
+      },
+      "filters": {
+        "group": "*",
+        "host": "",
+        "dataSource": "OCP_*,Etcd_*,KubeVirt_*,ODF_*,ACM_*,ArgoCD_*,Portworx_*",
+        "instance": "",
+        "dataPoint": "",
+        "severity": "critical",
+        "acked": "all",
+        "sdted": "all",
+        "rule": "",
+        "chain": "",
+        "cleared": "no",
+        "keyword": "",
+        "dependencyRole": "",
+        "dependencyRoutingState": "",
+        "anomaly": "all"
+      }
+    },
+    {
+      "id": 6744,
+      "name": "Error Alerts",
+      "description": "Error-severity live alerts across all 7 OpenShift Thanos suite DataSources",
+      "type": "alert",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {
+        "isShowAll": false,
+        "showFilter": true,
+        "columns": [
+          {
+            "visible": true,
+            "columnLabel": "Severity",
+            "columnKey": "alert-severity"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Began",
+            "columnKey": "alert-began"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Resource/Website",
+            "columnKey": "alert-device"
+          },
+          {
+            "visible": true,
+            "columnLabel": "LogicModule",
+            "columnKey": "alert-datasource"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Instance",
+            "columnKey": "alert-datasource-instance"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Datapoint",
+            "columnKey": "alert-datapoint"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Value",
+            "columnKey": "alert-value"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Static Threshold",
+            "columnKey": "alert-static-threshold"
+          }
+        ],
+        "fontsize": "normal-font",
+        "sort": "-startEpoch"
+      },
+      "filters": {
+        "group": "*",
+        "host": "",
+        "dataSource": "OCP_*,Etcd_*,KubeVirt_*,ODF_*,ACM_*,ArgoCD_*,Portworx_*",
+        "instance": "",
+        "dataPoint": "",
+        "severity": "error",
+        "acked": "all",
+        "sdted": "all",
+        "rule": "",
+        "chain": "",
+        "cleared": "no",
+        "keyword": "",
+        "dependencyRole": "",
+        "dependencyRoutingState": "",
+        "anomaly": "all"
+      }
+    },
+    {
+      "id": 6745,
+      "name": "Warning Alerts",
+      "description": "Warning-severity live alerts across all 7 OpenShift Thanos suite DataSources",
+      "type": "alert",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {
+        "isShowAll": false,
+        "showFilter": true,
+        "columns": [
+          {
+            "visible": true,
+            "columnLabel": "Severity",
+            "columnKey": "alert-severity"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Began",
+            "columnKey": "alert-began"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Resource/Website",
+            "columnKey": "alert-device"
+          },
+          {
+            "visible": true,
+            "columnLabel": "LogicModule",
+            "columnKey": "alert-datasource"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Instance",
+            "columnKey": "alert-datasource-instance"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Datapoint",
+            "columnKey": "alert-datapoint"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Value",
+            "columnKey": "alert-value"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Static Threshold",
+            "columnKey": "alert-static-threshold"
+          }
+        ],
+        "fontsize": "normal-font",
+        "sort": "-startEpoch"
+      },
+      "filters": {
+        "group": "*",
+        "host": "",
+        "dataSource": "OCP_*,Etcd_*,KubeVirt_*,ODF_*,ACM_*,ArgoCD_*,Portworx_*",
+        "instance": "",
+        "dataPoint": "",
+        "severity": "warn",
+        "acked": "all",
+        "sdted": "all",
+        "rule": "",
+        "chain": "",
+        "cleared": "no",
+        "keyword": "",
+        "dependencyRole": "",
+        "dependencyRoutingState": "",
+        "anomaly": "all"
+      }
+    },
+    {
+      "id": 6746,
+      "name": "All Active Alerts",
+      "description": "Every active alert across all 7 OpenShift Thanos suite DataSources (all severities)",
+      "type": "alert",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {
+        "isShowAll": false,
+        "showFilter": true,
+        "columns": [
+          {
+            "visible": true,
+            "columnLabel": "Severity",
+            "columnKey": "alert-severity"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Began",
+            "columnKey": "alert-began"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Resource/Website",
+            "columnKey": "alert-device"
+          },
+          {
+            "visible": true,
+            "columnLabel": "LogicModule",
+            "columnKey": "alert-datasource"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Instance",
+            "columnKey": "alert-datasource-instance"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Datapoint",
+            "columnKey": "alert-datapoint"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Value",
+            "columnKey": "alert-value"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Static Threshold",
+            "columnKey": "alert-static-threshold"
+          }
+        ],
+        "fontsize": "normal-font",
+        "sort": "-startEpoch"
+      },
+      "filters": {
+        "group": "*",
+        "host": "",
+        "dataSource": "OCP_*,Etcd_*,KubeVirt_*,ODF_*,ACM_*,ArgoCD_*,Portworx_*",
+        "instance": "",
+        "dataPoint": "",
+        "severity": "",
+        "acked": "all",
+        "sdted": "all",
+        "rule": "",
+        "chain": "",
+        "cleared": "no",
+        "keyword": "",
+        "dependencyRole": "",
+        "dependencyRoutingState": "",
+        "anomaly": "all"
+      }
+    }
+  ]
+}

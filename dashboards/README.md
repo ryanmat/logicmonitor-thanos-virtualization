@@ -11,8 +11,7 @@ LogicMonitor dashboards that visualize metrics and alerts from the Thanos DataSo
 | `openshift_storage.json` | OpenShift Storage | ODF (Ceph + NooBaa + Rook) + Portworx (cluster + KVDB + Autopilot) with capacity gauges | Available |
 | `openshift_application_delivery.json` | OpenShift Application Delivery | ArgoCD (inventory + sync + controller + repo + server) + KubeVirt (cluster + virt components + migrations) | Available |
 | `multi_cluster_fleet.json` | Multi-Cluster Fleet (ACM) | ACM hub fleet + managed cluster availability + hub components + controllers + Thanos observability | Available |
-| `active_alerts.json` | Active Alerts | Live alerts across suites, severity-tabbed | Planned |
-| `nexus_repository.json` | Nexus Repository | Sonatype Nexus (standalone suite) | Planned |
+| `active_alerts.json` | Active Alerts - OpenShift Thanos Suite | Cross-suite triage view scoped by severity (Critical, Error, Warning, All) | Available |
 
 ## Design Conventions
 
