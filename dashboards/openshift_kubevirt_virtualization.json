@@ -1,0 +1,458 @@
+{
+  "name": "OpenShift Virtualization (KubeVirt)",
+  "description": "Virtualization team view of KubeVirt clusters: HyperConverged operator health, VM inventory, virt component availability (virt-api, virt-controller, virt-handler), live migration activity, and active KubeVirt alerts.",
+  "sharable": true,
+  "groupName": "OpenShift Thanos Monitoring",
+  "groupFullPath": "OpenShift Thanos Monitoring",
+  "overwriteGroupFields": false,
+  "widgetTokens": [],
+  "defaultDashboardFilters": {
+    "defaultDashboardFilterDetails": []
+  },
+  "widgetsConfig": {
+    "6761": {
+      "col": 1,
+      "sizex": 12,
+      "row": 1,
+      "sizey": 4
+    },
+    "6762": {
+      "col": 1,
+      "sizex": 3,
+      "row": 5,
+      "sizey": 4
+    },
+    "6763": {
+      "col": 4,
+      "sizex": 3,
+      "row": 5,
+      "sizey": 4
+    },
+    "6764": {
+      "col": 7,
+      "sizex": 3,
+      "row": 5,
+      "sizey": 4
+    },
+    "6765": {
+      "col": 10,
+      "sizex": 3,
+      "row": 5,
+      "sizey": 4
+    },
+    "6766": {
+      "col": 1,
+      "sizex": 3,
+      "row": 9,
+      "sizey": 4
+    },
+    "6767": {
+      "col": 4,
+      "sizex": 3,
+      "row": 9,
+      "sizey": 4
+    },
+    "6768": {
+      "col": 7,
+      "sizex": 3,
+      "row": 9,
+      "sizey": 4
+    },
+    "6769": {
+      "col": 10,
+      "sizex": 3,
+      "row": 9,
+      "sizey": 4
+    },
+    "6770": {
+      "col": 1,
+      "sizex": 12,
+      "row": 13,
+      "sizey": 8
+    }
+  },
+  "template": null,
+  "widgets_full": [
+    {
+      "id": 6761,
+      "name": "OpenShift Virtualization (KubeVirt)",
+      "description": "KubeVirt header",
+      "type": "text",
+      "theme": "newSolidGray",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "content": "<h2>OpenShift Virtualization (KubeVirt)</h2><p>Virtualization team view covering the KubeVirt/OpenShift Virtualization stack. HyperConverged operator rollup, VM inventory, migration state, and per-component virt daemon health.</p><p><strong>Sections:</strong> Cluster rollup &middot; Virt components &middot; Active KubeVirt alerts</p><p><strong>Source:</strong> PromQL queries via Thanos Querier. Auto-binds via category <code>OpenShift_KubeVirt</code>.</p>"
+    },
+    {
+      "id": 6762,
+      "name": "KubeVirt System Health",
+      "description": "HyperConverged Operator health state across clusters (0 = healthy)",
+      "type": "bigNumber",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "KubeVirt Cluster Overview (KubeVirt_Cluster_Overview)",
+            "instanceName": "*",
+            "dataPointName": "system_health",
+            "name": "system_health",
+            "aggregateFunction": "max"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "system_health",
+            "bottomLabel": "",
+            "rightLabel": "KubeVirt Health (0=OK)",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6763,
+      "name": "VMs Running",
+      "description": "Virtual machines in Running state across clusters",
+      "type": "bigNumber",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "KubeVirt Cluster Overview (KubeVirt_Cluster_Overview)",
+            "instanceName": "*",
+            "dataPointName": "vms_running",
+            "name": "vms_running",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "vms_running",
+            "bottomLabel": "",
+            "rightLabel": "VMs Running",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6764,
+      "name": "VMs Total",
+      "description": "Total virtual machine inventory across clusters",
+      "type": "bigNumber",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "KubeVirt Cluster Overview (KubeVirt_Cluster_Overview)",
+            "instanceName": "*",
+            "dataPointName": "vms_total",
+            "name": "vms_total",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "vms_total",
+            "bottomLabel": "",
+            "rightLabel": "VMs Total",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6765,
+      "name": "Migrations Running",
+      "description": "KubeVirt live migrations currently executing across clusters",
+      "type": "bigNumber",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "KubeVirt Cluster Overview (KubeVirt_Cluster_Overview)",
+            "instanceName": "*",
+            "dataPointName": "migrations_running",
+            "name": "migrations_running",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "migrations_running",
+            "bottomLabel": "",
+            "rightLabel": "Migrations Running",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6766,
+      "name": "virt-api Up",
+      "description": "virt-api pods reporting Ready across all clusters",
+      "type": "bigNumber",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "KubeVirt Cluster Overview (KubeVirt_Cluster_Overview)",
+            "instanceName": "*",
+            "dataPointName": "virt_api_up",
+            "name": "virt_api_up",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "virt_api_up",
+            "bottomLabel": "",
+            "rightLabel": "virt-api Up",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6767,
+      "name": "virt-controller Up",
+      "description": "virt-controller pods reporting Ready across all clusters",
+      "type": "bigNumber",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "KubeVirt Cluster Overview (KubeVirt_Cluster_Overview)",
+            "instanceName": "*",
+            "dataPointName": "virt_controller_up",
+            "name": "virt_controller_up",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "virt_controller_up",
+            "bottomLabel": "",
+            "rightLabel": "virt-controller Up",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6768,
+      "name": "virt-handler Up",
+      "description": "virt-handler DaemonSet pods reporting Ready across all clusters",
+      "type": "bigNumber",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "KubeVirt Cluster Overview (KubeVirt_Cluster_Overview)",
+            "instanceName": "*",
+            "dataPointName": "virt_handler_up",
+            "name": "virt_handler_up",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "virt_handler_up",
+            "bottomLabel": "",
+            "rightLabel": "virt-handler Up",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6769,
+      "name": "Nodes with KVM",
+      "description": "Worker nodes advertising kvm capability across clusters",
+      "type": "bigNumber",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "KubeVirt Cluster Overview (KubeVirt_Cluster_Overview)",
+            "instanceName": "*",
+            "dataPointName": "nodes_with_kvm",
+            "name": "nodes_with_kvm",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "nodes_with_kvm",
+            "bottomLabel": "",
+            "rightLabel": "Nodes with KVM",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6770,
+      "name": "Active KubeVirt Alerts",
+      "description": "Live alerts scoped to KubeVirt_* DataSources",
+      "type": "alert",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {
+        "isShowAll": false,
+        "showFilter": true,
+        "columns": [
+          {
+            "visible": true,
+            "columnLabel": "Severity",
+            "columnKey": "alert-severity"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Began",
+            "columnKey": "alert-began"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Resource/Website",
+            "columnKey": "alert-device"
+          },
+          {
+            "visible": true,
+            "columnLabel": "LogicModule",
+            "columnKey": "alert-datasource"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Instance",
+            "columnKey": "alert-datasource-instance"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Datapoint",
+            "columnKey": "alert-datapoint"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Value",
+            "columnKey": "alert-value"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Static Threshold",
+            "columnKey": "alert-static-threshold"
+          }
+        ],
+        "fontsize": "normal-font",
+        "sort": "-startEpoch"
+      },
+      "filters": {
+        "group": "*",
+        "host": "",
+        "dataSource": "KubeVirt_*",
+        "instance": "",
+        "dataPoint": "",
+        "severity": "",
+        "acked": "all",
+        "sdted": "all",
+        "rule": "",
+        "chain": "",
+        "cleared": "no",
+        "keyword": "",
+        "dependencyRole": "",
+        "dependencyRoutingState": "",
+        "anomaly": "all"
+      }
+    }
+  ]
+}
