@@ -1,0 +1,802 @@
+{
+  "name": "Multi-Cluster Fleet (ACM)",
+  "description": "Fleet operations view of OpenShift clusters managed by Red Hat Advanced Cluster Management. Covers hub inventory, managed cluster availability, hub component health, ACM controllers, and Thanos observability stack.",
+  "sharable": true,
+  "groupName": "OpenShift Thanos Monitoring",
+  "groupFullPath": "OpenShift Thanos Monitoring",
+  "overwriteGroupFields": false,
+  "widgetTokens": [],
+  "defaultDashboardFilters": {
+    "defaultDashboardFilterDetails": []
+  },
+  "widgetsConfig": {
+    "6724": {
+      "col": 1,
+      "sizex": 12,
+      "row": 1,
+      "sizey": 4
+    },
+    "6725": {
+      "col": 1,
+      "sizex": 3,
+      "row": 5,
+      "sizey": 4
+    },
+    "6726": {
+      "col": 4,
+      "sizex": 3,
+      "row": 5,
+      "sizey": 4
+    },
+    "6727": {
+      "col": 7,
+      "sizex": 3,
+      "row": 5,
+      "sizey": 4
+    },
+    "6728": {
+      "col": 10,
+      "sizex": 3,
+      "row": 5,
+      "sizey": 4
+    },
+    "6729": {
+      "col": 1,
+      "sizex": 3,
+      "row": 9,
+      "sizey": 4
+    },
+    "6730": {
+      "col": 4,
+      "sizex": 3,
+      "row": 9,
+      "sizey": 4
+    },
+    "6731": {
+      "col": 7,
+      "sizex": 3,
+      "row": 9,
+      "sizey": 4
+    },
+    "6732": {
+      "col": 10,
+      "sizex": 3,
+      "row": 9,
+      "sizey": 4
+    },
+    "6733": {
+      "col": 1,
+      "sizex": 3,
+      "row": 13,
+      "sizey": 4
+    },
+    "6734": {
+      "col": 4,
+      "sizex": 3,
+      "row": 13,
+      "sizey": 4
+    },
+    "6735": {
+      "col": 7,
+      "sizex": 3,
+      "row": 13,
+      "sizey": 4
+    },
+    "6736": {
+      "col": 10,
+      "sizex": 3,
+      "row": 13,
+      "sizey": 4
+    },
+    "6737": {
+      "col": 1,
+      "sizex": 3,
+      "row": 17,
+      "sizey": 4
+    },
+    "6738": {
+      "col": 4,
+      "sizex": 3,
+      "row": 17,
+      "sizey": 4
+    },
+    "6739": {
+      "col": 7,
+      "sizex": 3,
+      "row": 17,
+      "sizey": 4
+    },
+    "6740": {
+      "col": 10,
+      "sizex": 3,
+      "row": 17,
+      "sizey": 4
+    },
+    "6741": {
+      "col": 1,
+      "sizex": 12,
+      "row": 21,
+      "sizey": 8
+    }
+  },
+  "template": null,
+  "widgets_full": [
+    {
+      "id": 6724,
+      "name": "Multi-Cluster Fleet (ACM)",
+      "description": "Fleet header",
+      "type": "text",
+      "theme": "newSolidGray",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "content": "<h2>Multi-Cluster Fleet (ACM)</h2><p>Fleet operations view of clusters under management by Red Hat Advanced Cluster Management. Each hub tile reports fleet-wide roll-ups so the picture scales with the customer's managed estate.</p><p><strong>Sections:</strong> Hub fleet inventory &middot; Hub + controller health &middot; Hub component replicas &middot; Thanos observability stack &middot; Active ACM alerts</p><p><strong>Source:</strong> PromQL queries against the ACM hub's Thanos Querier. Auto-binds via category <code>OpenShift_ACM</code>.</p>"
+    },
+    {
+      "id": 6725,
+      "name": "Managed Clusters Total",
+      "description": "Total managed clusters registered with all ACM hubs",
+      "type": "bigNumber",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "ACM Hub Overview (ACM_Hub_Overview)",
+            "instanceName": "*",
+            "dataPointName": "clusters_total",
+            "name": "clusters_total",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "clusters_total",
+            "bottomLabel": "",
+            "rightLabel": "Managed Clusters Total",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6726,
+      "name": "Clusters Available",
+      "description": "Managed clusters with Available condition true",
+      "type": "bigNumber",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "ACM Hub Overview (ACM_Hub_Overview)",
+            "instanceName": "*",
+            "dataPointName": "clusters_available",
+            "name": "clusters_available",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "clusters_available",
+            "bottomLabel": "",
+            "rightLabel": "Clusters Available",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6727,
+      "name": "Clusters Unavailable",
+      "description": "Managed clusters where Available condition is not true (should stay at 0)",
+      "type": "bigNumber",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "ACM Hub Overview (ACM_Hub_Overview)",
+            "instanceName": "*",
+            "dataPointName": "clusters_unavailable",
+            "name": "clusters_unavailable",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "clusters_unavailable",
+            "bottomLabel": "",
+            "rightLabel": "Clusters Unavailable",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6728,
+      "name": "Clusters Joined",
+      "description": "Managed clusters that have successfully joined the hub",
+      "type": "bigNumber",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "ACM Hub Overview (ACM_Hub_Overview)",
+            "instanceName": "*",
+            "dataPointName": "clusters_joined",
+            "name": "clusters_joined",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "clusters_joined",
+            "bottomLabel": "",
+            "rightLabel": "Clusters Joined",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6729,
+      "name": "Hub Reconcile Errors",
+      "description": "Reconcile errors reported by the ACM hub",
+      "type": "bigNumber",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "ACM Hub Overview (ACM_Hub_Overview)",
+            "instanceName": "*",
+            "dataPointName": "hub_reconcile_errors",
+            "name": "hub_reconcile_errors",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "hub_reconcile_errors",
+            "bottomLabel": "",
+            "rightLabel": "Hub Reconcile Errors",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6730,
+      "name": "Hub Workqueue Depth",
+      "description": "Hub workqueue depth (backlog signal)",
+      "type": "bigNumber",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "ACM Hub Overview (ACM_Hub_Overview)",
+            "instanceName": "*",
+            "dataPointName": "hub_workqueue_depth",
+            "name": "hub_workqueue_depth",
+            "aggregateFunction": "max"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "hub_workqueue_depth",
+            "bottomLabel": "",
+            "rightLabel": "Hub Workqueue Depth",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6731,
+      "name": "Total Worker Cores",
+      "description": "Total worker CPU cores across all managed clusters",
+      "type": "bigNumber",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "ACM Hub Overview (ACM_Hub_Overview)",
+            "instanceName": "*",
+            "dataPointName": "total_worker_cores",
+            "name": "total_worker_cores",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "total_worker_cores",
+            "bottomLabel": "",
+            "rightLabel": "Fleet Worker Cores",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": true,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6732,
+      "name": "Controller Reconcile Errors",
+      "description": "ACM controller reconcile errors aggregated across hubs",
+      "type": "bigNumber",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "ACM Controller Health (ACM_Controller_Health)",
+            "instanceName": "*",
+            "dataPointName": "reconcile_errors",
+            "name": "reconcile_errors",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "reconcile_errors",
+            "bottomLabel": "",
+            "rightLabel": "Controller Reconcile Errors",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6733,
+      "name": "Hub Replicas Unavailable",
+      "description": "Hub component replicas not available (deployment pain signal)",
+      "type": "bigNumber",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "ACM Hub Components (ACM_Hub_Components)",
+            "instanceName": "*",
+            "dataPointName": "replicas_unavailable",
+            "name": "replicas_unavailable",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "replicas_unavailable",
+            "bottomLabel": "",
+            "rightLabel": "Replicas Unavailable",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6734,
+      "name": "Hub Container Restarts",
+      "description": "Container restarts across hub component pods",
+      "type": "bigNumber",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "ACM Hub Components (ACM_Hub_Components)",
+            "instanceName": "*",
+            "dataPointName": "container_restarts",
+            "name": "container_restarts",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "container_restarts",
+            "bottomLabel": "",
+            "rightLabel": "Hub Container Restarts",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6735,
+      "name": "Hub Components Ready Ratio",
+      "description": "Average ratio of ready/desired replicas across hub components",
+      "type": "bigNumber",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "ACM Hub Components (ACM_Hub_Components)",
+            "instanceName": "*",
+            "dataPointName": "ready_ratio",
+            "name": "ready_ratio",
+            "aggregateFunction": "average"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "ready_ratio",
+            "bottomLabel": "",
+            "rightLabel": "Components Ready Ratio",
+            "position": 1,
+            "rounding": 2,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6736,
+      "name": "Controller Workqueue Depth",
+      "description": "ACM controller workqueue depth (hub processing backlog)",
+      "type": "bigNumber",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "ACM Controller Health (ACM_Controller_Health)",
+            "instanceName": "*",
+            "dataPointName": "workqueue_depth",
+            "name": "workqueue_depth",
+            "aggregateFunction": "max"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "workqueue_depth",
+            "bottomLabel": "",
+            "rightLabel": "Controller Workqueue Depth",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6737,
+      "name": "Thanos Query Up",
+      "description": "ACM observability Thanos Query instances reporting Up",
+      "type": "bigNumber",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "ACM Observability Health (ACM_Observability_Health)",
+            "instanceName": "*",
+            "dataPointName": "thanos_query_up",
+            "name": "thanos_query_up",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "thanos_query_up",
+            "bottomLabel": "",
+            "rightLabel": "Thanos Query Up",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6738,
+      "name": "Thanos Receive Up",
+      "description": "ACM observability Thanos Receive instances reporting Up",
+      "type": "bigNumber",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "ACM Observability Health (ACM_Observability_Health)",
+            "instanceName": "*",
+            "dataPointName": "thanos_receive_up",
+            "name": "thanos_receive_up",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "thanos_receive_up",
+            "bottomLabel": "",
+            "rightLabel": "Thanos Receive Up",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6739,
+      "name": "Thanos Store Up",
+      "description": "ACM observability Thanos Store gateway instances reporting Up",
+      "type": "bigNumber",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "ACM Observability Health (ACM_Observability_Health)",
+            "instanceName": "*",
+            "dataPointName": "thanos_store_up",
+            "name": "thanos_store_up",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "thanos_store_up",
+            "bottomLabel": "",
+            "rightLabel": "Thanos Store Up",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6740,
+      "name": "Observability Components Up",
+      "description": "Total ACM observability stack components reporting Up",
+      "type": "bigNumber",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "ACM Observability Health (ACM_Observability_Health)",
+            "instanceName": "*",
+            "dataPointName": "observability_components_up",
+            "name": "observability_components_up",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "observability_components_up",
+            "bottomLabel": "",
+            "rightLabel": "Observability Up",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6741,
+      "name": "Active ACM Alerts",
+      "description": "Live alerts scoped to ACM_* DataSources",
+      "type": "alert",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {
+        "isShowAll": false,
+        "showFilter": true,
+        "columns": [
+          {
+            "visible": true,
+            "columnLabel": "Severity",
+            "columnKey": "alert-severity"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Began",
+            "columnKey": "alert-began"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Resource/Website",
+            "columnKey": "alert-device"
+          },
+          {
+            "visible": true,
+            "columnLabel": "LogicModule",
+            "columnKey": "alert-datasource"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Instance",
+            "columnKey": "alert-datasource-instance"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Datapoint",
+            "columnKey": "alert-datapoint"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Value",
+            "columnKey": "alert-value"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Static Threshold",
+            "columnKey": "alert-static-threshold"
+          }
+        ],
+        "fontsize": "normal-font",
+        "sort": "-startEpoch"
+      },
+      "filters": {
+        "group": "*",
+        "host": "",
+        "dataSource": "ACM_*",
+        "instance": "",
+        "dataPoint": "",
+        "severity": "",
+        "acked": "all",
+        "sdted": "all",
+        "rule": "",
+        "chain": "",
+        "cleared": "no",
+        "keyword": "",
+        "dependencyRole": "",
+        "dependencyRoutingState": "",
+        "anomaly": "all"
+      }
+    }
+  ]
+}
