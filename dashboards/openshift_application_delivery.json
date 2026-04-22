@@ -1,0 +1,974 @@
+{
+  "name": "OpenShift Application Delivery",
+  "description": "App team view across OpenShift GitOps (ArgoCD fleet, controller, repo server, grpc server) and KubeVirt (cluster health, running VMs, virt components, migrations). Answers: are my apps syncing cleanly and are my VMs running?",
+  "sharable": true,
+  "groupName": "OpenShift Thanos Monitoring",
+  "groupFullPath": "OpenShift Thanos Monitoring",
+  "overwriteGroupFields": false,
+  "widgetTokens": [],
+  "defaultDashboardFilters": {
+    "defaultDashboardFilterDetails": []
+  },
+  "widgetsConfig": {
+    "6702": {
+      "col": 1,
+      "sizex": 12,
+      "row": 1,
+      "sizey": 4
+    },
+    "6703": {
+      "col": 1,
+      "sizex": 3,
+      "row": 5,
+      "sizey": 4
+    },
+    "6704": {
+      "col": 4,
+      "sizex": 3,
+      "row": 5,
+      "sizey": 4
+    },
+    "6705": {
+      "col": 7,
+      "sizex": 3,
+      "row": 5,
+      "sizey": 4
+    },
+    "6706": {
+      "col": 10,
+      "sizex": 3,
+      "row": 5,
+      "sizey": 4
+    },
+    "6707": {
+      "col": 1,
+      "sizex": 3,
+      "row": 9,
+      "sizey": 4
+    },
+    "6708": {
+      "col": 4,
+      "sizex": 3,
+      "row": 9,
+      "sizey": 4
+    },
+    "6709": {
+      "col": 7,
+      "sizex": 3,
+      "row": 9,
+      "sizey": 4
+    },
+    "6710": {
+      "col": 10,
+      "sizex": 3,
+      "row": 9,
+      "sizey": 4
+    },
+    "6711": {
+      "col": 1,
+      "sizex": 3,
+      "row": 13,
+      "sizey": 4
+    },
+    "6712": {
+      "col": 4,
+      "sizex": 3,
+      "row": 13,
+      "sizey": 4
+    },
+    "6713": {
+      "col": 7,
+      "sizex": 3,
+      "row": 13,
+      "sizey": 4
+    },
+    "6714": {
+      "col": 10,
+      "sizex": 3,
+      "row": 13,
+      "sizey": 4
+    },
+    "6715": {
+      "col": 1,
+      "sizex": 3,
+      "row": 17,
+      "sizey": 4
+    },
+    "6716": {
+      "col": 4,
+      "sizex": 3,
+      "row": 17,
+      "sizey": 4
+    },
+    "6717": {
+      "col": 7,
+      "sizex": 3,
+      "row": 17,
+      "sizey": 4
+    },
+    "6718": {
+      "col": 10,
+      "sizex": 3,
+      "row": 17,
+      "sizey": 4
+    },
+    "6719": {
+      "col": 1,
+      "sizex": 3,
+      "row": 21,
+      "sizey": 4
+    },
+    "6720": {
+      "col": 4,
+      "sizex": 3,
+      "row": 21,
+      "sizey": 4
+    },
+    "6721": {
+      "col": 7,
+      "sizex": 3,
+      "row": 21,
+      "sizey": 4
+    },
+    "6722": {
+      "col": 10,
+      "sizex": 3,
+      "row": 21,
+      "sizey": 4
+    },
+    "6723": {
+      "col": 1,
+      "sizex": 12,
+      "row": 25,
+      "sizey": 8
+    }
+  },
+  "template": null,
+  "widgets_full": [
+    {
+      "id": 6702,
+      "name": "OpenShift Application Delivery",
+      "description": "Application Delivery header",
+      "type": "text",
+      "theme": "newSolidGray",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "content": "<h2>OpenShift Application Delivery</h2><p>App-owner view of how workloads reach the cluster: GitOps sync status (ArgoCD fleet + controllers + repo + grpc server) and KubeVirt (VM inventory, running state, virt components, live migration activity).</p><p><strong>Sections:</strong> ArgoCD app inventory &middot; ArgoCD sync &amp; controller performance &middot; ArgoCD repo &amp; server &middot; KubeVirt cluster &middot; KubeVirt components &middot; Active delivery alerts</p><p><strong>Source:</strong> PromQL queries via Thanos Querier. Auto-binds via categories <code>OpenShift_GitOps</code> and <code>OpenShift_KubeVirt</code>.</p>"
+    },
+    {
+      "id": 6703,
+      "name": "ArgoCD Total Apps",
+      "description": "Total ArgoCD applications across all GitOps fleets",
+      "type": "bigNumber",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "ArgoCD Sync Overview (ArgoCD_Sync_Overview)",
+            "instanceName": "*",
+            "dataPointName": "total_apps",
+            "name": "total_apps",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "total_apps",
+            "bottomLabel": "",
+            "rightLabel": "Total Apps",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6704,
+      "name": "ArgoCD Synced Apps",
+      "description": "Apps reporting Synced state across the fleet",
+      "type": "bigNumber",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "ArgoCD Sync Overview (ArgoCD_Sync_Overview)",
+            "instanceName": "*",
+            "dataPointName": "synced_apps",
+            "name": "synced_apps",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "synced_apps",
+            "bottomLabel": "",
+            "rightLabel": "Synced Apps",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6705,
+      "name": "ArgoCD Out of Sync",
+      "description": "Apps reporting OutOfSync state across the fleet",
+      "type": "bigNumber",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "ArgoCD Sync Overview (ArgoCD_Sync_Overview)",
+            "instanceName": "*",
+            "dataPointName": "out_of_sync_apps",
+            "name": "out_of_sync_apps",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "out_of_sync_apps",
+            "bottomLabel": "",
+            "rightLabel": "Out of Sync Apps",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6706,
+      "name": "ArgoCD Healthy Apps",
+      "description": "Apps reporting Healthy state across the fleet",
+      "type": "bigNumber",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "ArgoCD Sync Overview (ArgoCD_Sync_Overview)",
+            "instanceName": "*",
+            "dataPointName": "healthy_apps",
+            "name": "healthy_apps",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "healthy_apps",
+            "bottomLabel": "",
+            "rightLabel": "Healthy Apps",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6707,
+      "name": "ArgoCD Degraded Apps",
+      "description": "Apps reporting Degraded state across the fleet (should stay at 0)",
+      "type": "bigNumber",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "ArgoCD Sync Overview (ArgoCD_Sync_Overview)",
+            "instanceName": "*",
+            "dataPointName": "degraded_apps",
+            "name": "degraded_apps",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "degraded_apps",
+            "bottomLabel": "",
+            "rightLabel": "Degraded Apps",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6708,
+      "name": "Sync Failure Rate",
+      "description": "ArgoCD sync failure rate averaged across fleets",
+      "type": "bigNumber",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "ArgoCD Sync Overview (ArgoCD_Sync_Overview)",
+            "instanceName": "*",
+            "dataPointName": "sync_failure_rate",
+            "name": "sync_failure_rate",
+            "aggregateFunction": "average"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "sync_failure_rate",
+            "bottomLabel": "",
+            "rightLabel": "Sync Failure Rate",
+            "position": 1,
+            "rounding": 2,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6709,
+      "name": "Controller p95 Reconcile",
+      "description": "ArgoCD application-controller p95 reconcile duration (ms), worst across fleets",
+      "type": "bigNumber",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "ArgoCD Controller Performance (ArgoCD_Controller_Performance)",
+            "instanceName": "*",
+            "dataPointName": "p95_reconcile_ms",
+            "name": "p95_reconcile_ms",
+            "aggregateFunction": "max"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "p95_reconcile_ms",
+            "bottomLabel": "",
+            "rightLabel": "Controller p95 Reconcile (ms)",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6710,
+      "name": "Controller Workqueue Depth",
+      "description": "ArgoCD application-controller workqueue depth across fleets (backlog signal)",
+      "type": "bigNumber",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "ArgoCD Controller Performance (ArgoCD_Controller_Performance)",
+            "instanceName": "*",
+            "dataPointName": "workqueue_depth",
+            "name": "workqueue_depth",
+            "aggregateFunction": "max"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "workqueue_depth",
+            "bottomLabel": "",
+            "rightLabel": "Controller Workqueue Depth",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6711,
+      "name": "Git Fetch Rate",
+      "description": "ArgoCD repo-server git fetch rate summed across fleets",
+      "type": "bigNumber",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "ArgoCD Repo Server (ArgoCD_Repo_Server)",
+            "instanceName": "*",
+            "dataPointName": "git_fetch_rate",
+            "name": "git_fetch_rate",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "git_fetch_rate",
+            "bottomLabel": "",
+            "rightLabel": "Git Fetch Rate",
+            "position": 1,
+            "rounding": 2,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6712,
+      "name": "Git Error Rate",
+      "description": "ArgoCD repo-server git error rate (should stay near 0)",
+      "type": "bigNumber",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "ArgoCD Repo Server (ArgoCD_Repo_Server)",
+            "instanceName": "*",
+            "dataPointName": "git_error_rate",
+            "name": "git_error_rate",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "git_error_rate",
+            "bottomLabel": "",
+            "rightLabel": "Git Error Rate",
+            "position": 1,
+            "rounding": 2,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6713,
+      "name": "gRPC Request Rate",
+      "description": "ArgoCD server gRPC request rate across fleets",
+      "type": "bigNumber",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "ArgoCD Server Metrics (ArgoCD_Server_Metrics)",
+            "instanceName": "*",
+            "dataPointName": "grpc_request_rate",
+            "name": "grpc_request_rate",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "grpc_request_rate",
+            "bottomLabel": "",
+            "rightLabel": "gRPC Request Rate",
+            "position": 1,
+            "rounding": 2,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6714,
+      "name": "gRPC Error Rate",
+      "description": "ArgoCD server gRPC error rate (should stay near 0)",
+      "type": "bigNumber",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "ArgoCD Server Metrics (ArgoCD_Server_Metrics)",
+            "instanceName": "*",
+            "dataPointName": "grpc_error_rate",
+            "name": "grpc_error_rate",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "grpc_error_rate",
+            "bottomLabel": "",
+            "rightLabel": "gRPC Error Rate",
+            "position": 1,
+            "rounding": 2,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6715,
+      "name": "KubeVirt System Health",
+      "description": "HyperConverged Operator health state across clusters (0 = healthy)",
+      "type": "bigNumber",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "KubeVirt Cluster Overview (KubeVirt_Cluster_Overview)",
+            "instanceName": "*",
+            "dataPointName": "system_health",
+            "name": "system_health",
+            "aggregateFunction": "max"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "system_health",
+            "bottomLabel": "",
+            "rightLabel": "KubeVirt Health (0=OK)",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6716,
+      "name": "VMs Running",
+      "description": "Virtual machines in Running state across clusters",
+      "type": "bigNumber",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "KubeVirt Cluster Overview (KubeVirt_Cluster_Overview)",
+            "instanceName": "*",
+            "dataPointName": "vms_running",
+            "name": "vms_running",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "vms_running",
+            "bottomLabel": "",
+            "rightLabel": "VMs Running",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6717,
+      "name": "VMs Total",
+      "description": "Total virtual machine inventory across clusters",
+      "type": "bigNumber",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "KubeVirt Cluster Overview (KubeVirt_Cluster_Overview)",
+            "instanceName": "*",
+            "dataPointName": "vms_total",
+            "name": "vms_total",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "vms_total",
+            "bottomLabel": "",
+            "rightLabel": "VMs Total",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6718,
+      "name": "Migrations Running",
+      "description": "KubeVirt live migrations currently executing across clusters",
+      "type": "bigNumber",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "KubeVirt Cluster Overview (KubeVirt_Cluster_Overview)",
+            "instanceName": "*",
+            "dataPointName": "migrations_running",
+            "name": "migrations_running",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "migrations_running",
+            "bottomLabel": "",
+            "rightLabel": "Migrations Running",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6719,
+      "name": "virt-api Up",
+      "description": "virt-api pods reporting Ready across all clusters",
+      "type": "bigNumber",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "KubeVirt Cluster Overview (KubeVirt_Cluster_Overview)",
+            "instanceName": "*",
+            "dataPointName": "virt_api_up",
+            "name": "virt_api_up",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "virt_api_up",
+            "bottomLabel": "",
+            "rightLabel": "virt-api Up",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6720,
+      "name": "virt-controller Up",
+      "description": "virt-controller pods reporting Ready across all clusters",
+      "type": "bigNumber",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "KubeVirt Cluster Overview (KubeVirt_Cluster_Overview)",
+            "instanceName": "*",
+            "dataPointName": "virt_controller_up",
+            "name": "virt_controller_up",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "virt_controller_up",
+            "bottomLabel": "",
+            "rightLabel": "virt-controller Up",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6721,
+      "name": "virt-handler Up",
+      "description": "virt-handler DaemonSet pods reporting Ready across all clusters",
+      "type": "bigNumber",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "KubeVirt Cluster Overview (KubeVirt_Cluster_Overview)",
+            "instanceName": "*",
+            "dataPointName": "virt_handler_up",
+            "name": "virt_handler_up",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "virt_handler_up",
+            "bottomLabel": "",
+            "rightLabel": "virt-handler Up",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6722,
+      "name": "Nodes with KVM",
+      "description": "Worker nodes advertising kvm capability across clusters",
+      "type": "bigNumber",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
+      "bigNumberInfo": {
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "KubeVirt Cluster Overview (KubeVirt_Cluster_Overview)",
+            "instanceName": "*",
+            "dataPointName": "nodes_with_kvm",
+            "name": "nodes_with_kvm",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "nodes_with_kvm",
+            "bottomLabel": "",
+            "rightLabel": "Nodes with KVM",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 6723,
+      "name": "Active Delivery Alerts (GitOps + KubeVirt)",
+      "description": "Live alerts scoped to ArgoCD_* and KubeVirt_* DataSources",
+      "type": "alert",
+      "theme": "newSolidDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {
+        "isShowAll": false,
+        "showFilter": true,
+        "columns": [
+          {
+            "visible": true,
+            "columnLabel": "Severity",
+            "columnKey": "alert-severity"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Began",
+            "columnKey": "alert-began"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Resource/Website",
+            "columnKey": "alert-device"
+          },
+          {
+            "visible": true,
+            "columnLabel": "LogicModule",
+            "columnKey": "alert-datasource"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Instance",
+            "columnKey": "alert-datasource-instance"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Datapoint",
+            "columnKey": "alert-datapoint"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Value",
+            "columnKey": "alert-value"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Static Threshold",
+            "columnKey": "alert-static-threshold"
+          }
+        ],
+        "fontsize": "normal-font",
+        "sort": "-startEpoch"
+      },
+      "filters": {
+        "group": "*",
+        "host": "",
+        "dataSource": "ArgoCD_*,KubeVirt_*",
+        "instance": "",
+        "dataPoint": "",
+        "severity": "",
+        "acked": "all",
+        "sdted": "all",
+        "rule": "",
+        "chain": "",
+        "cleared": "no",
+        "keyword": "",
+        "dependencyRole": "",
+        "dependencyRoutingState": "",
+        "anomaly": "all"
+      }
+    }
+  ]
+}
