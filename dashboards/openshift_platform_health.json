@@ -6,231 +6,925 @@
   "groupFullPath": "OpenShift Thanos Monitoring",
   "overwriteGroupFields": false,
   "widgetTokens": [],
-  "defaultDashboardFilters": {"defaultDashboardFilterDetails": []},
-  "widgetsConfig": {},
+  "defaultDashboardFilters": {
+    "defaultDashboardFilterDetails": []
+  },
+  "widgetsConfig": {
+    "6657": {
+      "col": 1,
+      "sizex": 3,
+      "row": 1,
+      "sizey": 8
+    },
+    "6677": {
+      "col": 4,
+      "sizex": 9,
+      "row": 1,
+      "sizey": 8
+    },
+    "6658": {
+      "col": 5,
+      "sizex": 4,
+      "row": 9,
+      "sizey": 4
+    },
+    "6659": {
+      "col": 9,
+      "sizex": 4,
+      "row": 9,
+      "sizey": 4
+    },
+    "6660": {
+      "col": 1,
+      "sizex": 4,
+      "row": 9,
+      "sizey": 4
+    },
+    "6661": {
+      "col": 5,
+      "sizex": 4,
+      "row": 17,
+      "sizey": 4
+    },
+    "6662": {
+      "col": 9,
+      "sizex": 4,
+      "row": 13,
+      "sizey": 4
+    },
+    "6663": {
+      "col": 1,
+      "sizex": 4,
+      "row": 17,
+      "sizey": 4
+    },
+    "6664": {
+      "col": 5,
+      "sizex": 4,
+      "row": 21,
+      "sizey": 4
+    },
+    "6665": {
+      "col": 9,
+      "sizex": 4,
+      "row": 17,
+      "sizey": 4
+    },
+    "6666": {
+      "col": 1,
+      "sizex": 4,
+      "row": 21,
+      "sizey": 4
+    },
+    "6667": {
+      "col": 5,
+      "sizex": 4,
+      "row": 25,
+      "sizey": 4
+    },
+    "6668": {
+      "col": 9,
+      "sizex": 4,
+      "row": 21,
+      "sizey": 4
+    },
+    "6669": {
+      "col": 1,
+      "sizex": 4,
+      "row": 25,
+      "sizey": 4
+    },
+    "6670": {
+      "col": 5,
+      "sizex": 4,
+      "row": 29,
+      "sizey": 4
+    },
+    "6671": {
+      "col": 9,
+      "sizex": 4,
+      "row": 25,
+      "sizey": 4
+    },
+    "6672": {
+      "col": 1,
+      "sizex": 4,
+      "row": 29,
+      "sizey": 4
+    },
+    "6673": {
+      "col": 1,
+      "sizex": 8,
+      "row": 13,
+      "sizey": 4
+    },
+    "6674": {
+      "col": 9,
+      "sizex": 4,
+      "row": 29,
+      "sizey": 4
+    },
+    "6675": {
+      "col": 1,
+      "sizex": 4,
+      "row": 33,
+      "sizey": 4
+    },
+    "6676": {
+      "col": 5,
+      "sizex": 4,
+      "row": 33,
+      "sizey": 4
+    }
+  },
   "template": null,
   "widgets_full": [
     {
+      "id": 6657,
       "name": "OpenShift Platform Health",
       "description": "Platform health header",
       "type": "text",
-      "theme": "newSolidDarkBlue",
+      "theme": "newSolidGray",
       "interval": 5,
       "timescale": "day",
+      "displaySettings": {},
       "content": "<h2>OpenShift Platform Health</h2><p>Deep-dive operational view of the OpenShift control plane (OCP) and the etcd quorum that backs it. Designed for platform engineering: if anything here is off, end-user workloads will feel it next.</p><p><strong>Sections:</strong> Control plane alarms &middot; API server &amp; scheduler performance &middot; Etcd cluster health &middot; Etcd member performance &middot; Certificates &amp; monitoring &middot; Active platform alerts</p><p><strong>Source:</strong> PromQL queries against each cluster's Thanos Querier, aggregated across all devices with categories <code>OpenShift_OCP</code> and <code>OpenShift_Etcd</code>.</p>"
     },
     {
+      "id": 6658,
       "name": "Degraded Operators",
       "description": "ClusterOperators reporting Degraded=True across all OCP clusters",
-      "type": "bigNumber", "theme": "borderPurple", "interval": 5, "timescale": "day",
+      "type": "bigNumber",
+      "theme": "newBorderDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
       "bigNumberInfo": {
-        "dataPoints": [{"deviceGroupFullPath": "*", "deviceDisplayName": "*", "dataSourceFullName": "OCP Operator Overview (OCP_Operator_Overview)", "instanceName": "*", "dataPointName": "operators_degraded", "name": "operators_degraded", "aggregateFunction": "sum"}],
-        "virtualDataPoints": [], "counters": [],
-        "bigNumberItems": [{"dataPointName": "operators_degraded", "bottomLabel": "", "rightLabel": "Degraded Operators", "position": 1, "rounding": 0, "colorThresholds": null, "useCommaSeparators": false, "actions": []}]
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "OCP Operator Overview (OCP_Operator_Overview)",
+            "instanceName": "*",
+            "dataPointName": "operators_degraded",
+            "name": "operators_degraded",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "operators_degraded",
+            "bottomLabel": "",
+            "rightLabel": "Degraded Operators",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
       }
     },
     {
+      "id": 6659,
       "name": "Pods CrashLoopBackOff",
       "description": "Pods stuck in CrashLoopBackOff across all OCP clusters",
-      "type": "bigNumber", "theme": "borderPurple", "interval": 5, "timescale": "day",
+      "type": "bigNumber",
+      "theme": "newBorderDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
       "bigNumberInfo": {
-        "dataPoints": [{"deviceGroupFullPath": "*", "deviceDisplayName": "*", "dataSourceFullName": "OCP Pod Health (OCP_Pod_Health)", "instanceName": "*", "dataPointName": "pods_crashloopbackoff", "name": "pods_crashloopbackoff", "aggregateFunction": "sum"}],
-        "virtualDataPoints": [], "counters": [],
-        "bigNumberItems": [{"dataPointName": "pods_crashloopbackoff", "bottomLabel": "", "rightLabel": "Pods CrashLoopBackOff", "position": 1, "rounding": 0, "colorThresholds": null, "useCommaSeparators": false, "actions": []}]
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "OCP Pod Health (OCP_Pod_Health)",
+            "instanceName": "*",
+            "dataPointName": "pods_crashloopbackoff",
+            "name": "pods_crashloopbackoff",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "pods_crashloopbackoff",
+            "bottomLabel": "",
+            "rightLabel": "Pods CrashLoopBackOff",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
       }
     },
     {
+      "id": 6660,
       "name": "Pods Pending",
       "description": "Pods stuck in Pending state across all OCP clusters",
-      "type": "bigNumber", "theme": "borderPurple", "interval": 5, "timescale": "day",
+      "type": "bigNumber",
+      "theme": "newBorderDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
       "bigNumberInfo": {
-        "dataPoints": [{"deviceGroupFullPath": "*", "deviceDisplayName": "*", "dataSourceFullName": "OCP Pod Health (OCP_Pod_Health)", "instanceName": "*", "dataPointName": "pods_pending", "name": "pods_pending", "aggregateFunction": "sum"}],
-        "virtualDataPoints": [], "counters": [],
-        "bigNumberItems": [{"dataPointName": "pods_pending", "bottomLabel": "", "rightLabel": "Pods Pending", "position": 1, "rounding": 0, "colorThresholds": null, "useCommaSeparators": false, "actions": []}]
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "OCP Pod Health (OCP_Pod_Health)",
+            "instanceName": "*",
+            "dataPointName": "pods_pending",
+            "name": "pods_pending",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "pods_pending",
+            "bottomLabel": "",
+            "rightLabel": "Pods Pending",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
       }
     },
     {
+      "id": 6661,
       "name": "Pods OOMKilled",
       "description": "Pods terminated by OOM killer across all OCP clusters",
-      "type": "bigNumber", "theme": "borderPurple", "interval": 5, "timescale": "day",
+      "type": "bigNumber",
+      "theme": "newBorderDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
       "bigNumberInfo": {
-        "dataPoints": [{"deviceGroupFullPath": "*", "deviceDisplayName": "*", "dataSourceFullName": "OCP Pod Health (OCP_Pod_Health)", "instanceName": "*", "dataPointName": "pods_oomkilled", "name": "pods_oomkilled", "aggregateFunction": "sum"}],
-        "virtualDataPoints": [], "counters": [],
-        "bigNumberItems": [{"dataPointName": "pods_oomkilled", "bottomLabel": "", "rightLabel": "Pods OOMKilled", "position": 1, "rounding": 0, "colorThresholds": null, "useCommaSeparators": false, "actions": []}]
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "OCP Pod Health (OCP_Pod_Health)",
+            "instanceName": "*",
+            "dataPointName": "pods_oomkilled",
+            "name": "pods_oomkilled",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "pods_oomkilled",
+            "bottomLabel": "",
+            "rightLabel": "Pods OOMKilled",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
       }
     },
     {
+      "id": 6662,
       "name": "API Server p99 Latency",
       "description": "p99 latency (ms) of kube-apiserver requests, worst across clusters",
-      "type": "bigNumber", "theme": "borderPurple", "interval": 5, "timescale": "day",
+      "type": "bigNumber",
+      "theme": "newBorderDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
       "bigNumberInfo": {
-        "dataPoints": [{"deviceGroupFullPath": "*", "deviceDisplayName": "*", "dataSourceFullName": "OCP API Server Performance (OCP_API_Server_Performance)", "instanceName": "*", "dataPointName": "p99_latency_ms", "name": "p99_latency_ms", "aggregateFunction": "max"}],
-        "virtualDataPoints": [], "counters": [],
-        "bigNumberItems": [{"dataPointName": "p99_latency_ms", "bottomLabel": "", "rightLabel": "API Server p99 (ms)", "position": 1, "rounding": 0, "colorThresholds": null, "useCommaSeparators": false, "actions": []}]
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "OCP API Server Performance (OCP_API_Server_Performance)",
+            "instanceName": "*",
+            "dataPointName": "p99_latency_ms",
+            "name": "p99_latency_ms",
+            "aggregateFunction": "max"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "p99_latency_ms",
+            "bottomLabel": "",
+            "rightLabel": "API Server p99 (ms)",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
       }
     },
     {
+      "id": 6663,
       "name": "API Server 5xx Rate",
       "description": "Kube-apiserver 5xx error rate summed across clusters",
-      "type": "bigNumber", "theme": "borderPurple", "interval": 5, "timescale": "day",
+      "type": "bigNumber",
+      "theme": "newBorderDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
       "bigNumberInfo": {
-        "dataPoints": [{"deviceGroupFullPath": "*", "deviceDisplayName": "*", "dataSourceFullName": "OCP API Server Performance (OCP_API_Server_Performance)", "instanceName": "*", "dataPointName": "error_rate_5xx", "name": "error_rate_5xx", "aggregateFunction": "sum"}],
-        "virtualDataPoints": [], "counters": [],
-        "bigNumberItems": [{"dataPointName": "error_rate_5xx", "bottomLabel": "", "rightLabel": "API Server 5xx/s", "position": 1, "rounding": 2, "colorThresholds": null, "useCommaSeparators": false, "actions": []}]
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "OCP API Server Performance (OCP_API_Server_Performance)",
+            "instanceName": "*",
+            "dataPointName": "error_rate_5xx",
+            "name": "error_rate_5xx",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "error_rate_5xx",
+            "bottomLabel": "",
+            "rightLabel": "API Server 5xx/s",
+            "position": 1,
+            "rounding": 2,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
       }
     },
     {
+      "id": 6664,
       "name": "Scheduler p99 Latency",
       "description": "p99 scheduling duration (ms), worst across clusters",
-      "type": "bigNumber", "theme": "borderPurple", "interval": 5, "timescale": "day",
+      "type": "bigNumber",
+      "theme": "newBorderDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
       "bigNumberInfo": {
-        "dataPoints": [{"deviceGroupFullPath": "*", "deviceDisplayName": "*", "dataSourceFullName": "OCP Scheduler Performance (OCP_Scheduler_Performance)", "instanceName": "*", "dataPointName": "scheduling_p99_ms", "name": "scheduling_p99_ms", "aggregateFunction": "max"}],
-        "virtualDataPoints": [], "counters": [],
-        "bigNumberItems": [{"dataPointName": "scheduling_p99_ms", "bottomLabel": "", "rightLabel": "Scheduler p99 (ms)", "position": 1, "rounding": 0, "colorThresholds": null, "useCommaSeparators": false, "actions": []}]
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "OCP Scheduler Performance (OCP_Scheduler_Performance)",
+            "instanceName": "*",
+            "dataPointName": "scheduling_p99_ms",
+            "name": "scheduling_p99_ms",
+            "aggregateFunction": "max"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "scheduling_p99_ms",
+            "bottomLabel": "",
+            "rightLabel": "Scheduler p99 (ms)",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
       }
     },
     {
+      "id": 6665,
       "name": "Unschedulable Pods",
       "description": "Pods the scheduler could not place due to missing resources or constraints",
-      "type": "bigNumber", "theme": "borderPurple", "interval": 5, "timescale": "day",
+      "type": "bigNumber",
+      "theme": "newBorderDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
       "bigNumberInfo": {
-        "dataPoints": [{"deviceGroupFullPath": "*", "deviceDisplayName": "*", "dataSourceFullName": "OCP Scheduler Performance (OCP_Scheduler_Performance)", "instanceName": "*", "dataPointName": "pending_unschedulable", "name": "pending_unschedulable", "aggregateFunction": "sum"}],
-        "virtualDataPoints": [], "counters": [],
-        "bigNumberItems": [{"dataPointName": "pending_unschedulable", "bottomLabel": "", "rightLabel": "Unschedulable Pods", "position": 1, "rounding": 0, "colorThresholds": null, "useCommaSeparators": false, "actions": []}]
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "OCP Scheduler Performance (OCP_Scheduler_Performance)",
+            "instanceName": "*",
+            "dataPointName": "pending_unschedulable",
+            "name": "pending_unschedulable",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "pending_unschedulable",
+            "bottomLabel": "",
+            "rightLabel": "Unschedulable Pods",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
       }
     },
     {
+      "id": 6666,
       "name": "Etcd Leaders Active",
       "description": "Active etcd leaders summed across clusters (must equal cluster count)",
-      "type": "bigNumber", "theme": "borderPurple", "interval": 5, "timescale": "day",
+      "type": "bigNumber",
+      "theme": "newBorderDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
       "bigNumberInfo": {
-        "dataPoints": [{"deviceGroupFullPath": "*", "deviceDisplayName": "*", "dataSourceFullName": "Etcd Cluster Overview (Etcd_Cluster_Overview)", "instanceName": "*", "dataPointName": "leaders_active", "name": "leaders_active", "aggregateFunction": "sum"}],
-        "virtualDataPoints": [], "counters": [],
-        "bigNumberItems": [{"dataPointName": "leaders_active", "bottomLabel": "", "rightLabel": "Etcd Leaders Active", "position": 1, "rounding": 0, "colorThresholds": null, "useCommaSeparators": false, "actions": []}]
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "Etcd Cluster Overview (Etcd_Cluster_Overview)",
+            "instanceName": "*",
+            "dataPointName": "leaders_active",
+            "name": "leaders_active",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "leaders_active",
+            "bottomLabel": "",
+            "rightLabel": "Etcd Leaders Active",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
       }
     },
     {
+      "id": 6667,
       "name": "Etcd Members with Leader",
       "description": "Etcd members that see a leader (should equal total members)",
-      "type": "bigNumber", "theme": "borderPurple", "interval": 5, "timescale": "day",
+      "type": "bigNumber",
+      "theme": "newBorderDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
       "bigNumberInfo": {
-        "dataPoints": [{"deviceGroupFullPath": "*", "deviceDisplayName": "*", "dataSourceFullName": "Etcd Cluster Overview (Etcd_Cluster_Overview)", "instanceName": "*", "dataPointName": "members_with_leader", "name": "members_with_leader", "aggregateFunction": "sum"}],
-        "virtualDataPoints": [], "counters": [],
-        "bigNumberItems": [{"dataPointName": "members_with_leader", "bottomLabel": "", "rightLabel": "Members with Leader", "position": 1, "rounding": 0, "colorThresholds": null, "useCommaSeparators": false, "actions": []}]
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "Etcd Cluster Overview (Etcd_Cluster_Overview)",
+            "instanceName": "*",
+            "dataPointName": "members_with_leader",
+            "name": "members_with_leader",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "members_with_leader",
+            "bottomLabel": "",
+            "rightLabel": "Members with Leader",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
       }
     },
     {
+      "id": 6668,
       "name": "Etcd Leader Changes",
       "description": "Cumulative leader changes across all etcd clusters (high = unstable quorum)",
-      "type": "bigNumber", "theme": "borderPurple", "interval": 5, "timescale": "day",
+      "type": "bigNumber",
+      "theme": "newBorderDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
       "bigNumberInfo": {
-        "dataPoints": [{"deviceGroupFullPath": "*", "deviceDisplayName": "*", "dataSourceFullName": "Etcd Cluster Overview (Etcd_Cluster_Overview)", "instanceName": "*", "dataPointName": "leader_changes_total", "name": "leader_changes_total", "aggregateFunction": "sum"}],
-        "virtualDataPoints": [], "counters": [],
-        "bigNumberItems": [{"dataPointName": "leader_changes_total", "bottomLabel": "", "rightLabel": "Leader Changes (total)", "position": 1, "rounding": 0, "colorThresholds": null, "useCommaSeparators": false, "actions": []}]
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "Etcd Cluster Overview (Etcd_Cluster_Overview)",
+            "instanceName": "*",
+            "dataPointName": "leader_changes_total",
+            "name": "leader_changes_total",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "leader_changes_total",
+            "bottomLabel": "",
+            "rightLabel": "Leader Changes (total)",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
       }
     },
     {
+      "id": 6669,
       "name": "Etcd Proposals Failed",
       "description": "Failed Raft proposals across all etcd clusters (should stay at 0)",
-      "type": "bigNumber", "theme": "borderPurple", "interval": 5, "timescale": "day",
+      "type": "bigNumber",
+      "theme": "newBorderDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
       "bigNumberInfo": {
-        "dataPoints": [{"deviceGroupFullPath": "*", "deviceDisplayName": "*", "dataSourceFullName": "Etcd Cluster Overview (Etcd_Cluster_Overview)", "instanceName": "*", "dataPointName": "proposals_failed_total", "name": "proposals_failed_total", "aggregateFunction": "sum"}],
-        "virtualDataPoints": [], "counters": [],
-        "bigNumberItems": [{"dataPointName": "proposals_failed_total", "bottomLabel": "", "rightLabel": "Proposals Failed", "position": 1, "rounding": 0, "colorThresholds": null, "useCommaSeparators": false, "actions": []}]
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "Etcd Cluster Overview (Etcd_Cluster_Overview)",
+            "instanceName": "*",
+            "dataPointName": "proposals_failed_total",
+            "name": "proposals_failed_total",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "proposals_failed_total",
+            "bottomLabel": "",
+            "rightLabel": "Proposals Failed",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
       }
     },
     {
+      "id": 6670,
       "name": "Etcd Backend Commit p99",
       "description": "Worst etcd backend commit p99 across all members (target less than 25ms)",
-      "type": "bigNumber", "theme": "borderPurple", "interval": 5, "timescale": "day",
+      "type": "bigNumber",
+      "theme": "newBorderDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
       "bigNumberInfo": {
-        "dataPoints": [{"deviceGroupFullPath": "*", "deviceDisplayName": "*", "dataSourceFullName": "Etcd Member Performance (Etcd_Member_Performance)", "instanceName": "*", "dataPointName": "backend_commit_p99", "name": "backend_commit_p99", "aggregateFunction": "max"}],
-        "virtualDataPoints": [], "counters": [],
-        "bigNumberItems": [{"dataPointName": "backend_commit_p99", "bottomLabel": "", "rightLabel": "Backend Commit p99 (ms)", "position": 1, "rounding": 1, "colorThresholds": null, "useCommaSeparators": false, "actions": []}]
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "Etcd Member Performance (Etcd_Member_Performance)",
+            "instanceName": "*",
+            "dataPointName": "backend_commit_p99",
+            "name": "backend_commit_p99",
+            "aggregateFunction": "max"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "backend_commit_p99",
+            "bottomLabel": "",
+            "rightLabel": "Backend Commit p99 (ms)",
+            "position": 1,
+            "rounding": 1,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
       }
     },
     {
+      "id": 6671,
       "name": "Etcd WAL fsync p99",
       "description": "Worst etcd WAL fsync p99 across all members (disk latency signal)",
-      "type": "bigNumber", "theme": "borderPurple", "interval": 5, "timescale": "day",
+      "type": "bigNumber",
+      "theme": "newBorderDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
       "bigNumberInfo": {
-        "dataPoints": [{"deviceGroupFullPath": "*", "deviceDisplayName": "*", "dataSourceFullName": "Etcd Member Performance (Etcd_Member_Performance)", "instanceName": "*", "dataPointName": "wal_fsync_p99", "name": "wal_fsync_p99", "aggregateFunction": "max"}],
-        "virtualDataPoints": [], "counters": [],
-        "bigNumberItems": [{"dataPointName": "wal_fsync_p99", "bottomLabel": "", "rightLabel": "WAL fsync p99 (ms)", "position": 1, "rounding": 1, "colorThresholds": null, "useCommaSeparators": false, "actions": []}]
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "Etcd Member Performance (Etcd_Member_Performance)",
+            "instanceName": "*",
+            "dataPointName": "wal_fsync_p99",
+            "name": "wal_fsync_p99",
+            "aggregateFunction": "max"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "wal_fsync_p99",
+            "bottomLabel": "",
+            "rightLabel": "WAL fsync p99 (ms)",
+            "position": 1,
+            "rounding": 1,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
       }
     },
     {
+      "id": 6672,
       "name": "Etcd Peer RTT p99",
       "description": "Worst etcd peer-to-peer round-trip p99 (network signal)",
-      "type": "bigNumber", "theme": "borderPurple", "interval": 5, "timescale": "day",
+      "type": "bigNumber",
+      "theme": "newBorderDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
       "bigNumberInfo": {
-        "dataPoints": [{"deviceGroupFullPath": "*", "deviceDisplayName": "*", "dataSourceFullName": "Etcd Member Performance (Etcd_Member_Performance)", "instanceName": "*", "dataPointName": "peer_rtt_p99", "name": "peer_rtt_p99", "aggregateFunction": "max"}],
-        "virtualDataPoints": [], "counters": [],
-        "bigNumberItems": [{"dataPointName": "peer_rtt_p99", "bottomLabel": "", "rightLabel": "Peer RTT p99 (ms)", "position": 1, "rounding": 1, "colorThresholds": null, "useCommaSeparators": false, "actions": []}]
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "Etcd Member Performance (Etcd_Member_Performance)",
+            "instanceName": "*",
+            "dataPointName": "peer_rtt_p99",
+            "name": "peer_rtt_p99",
+            "aggregateFunction": "max"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "peer_rtt_p99",
+            "bottomLabel": "",
+            "rightLabel": "Peer RTT p99 (ms)",
+            "position": 1,
+            "rounding": 1,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
       }
     },
     {
+      "id": 6673,
       "name": "Etcd DB Total Size",
       "description": "Total etcd DB size across all members (fleet storage footprint)",
-      "type": "bigNumber", "theme": "borderPurple", "interval": 5, "timescale": "day",
+      "type": "bigNumber",
+      "theme": "newBorderDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
       "bigNumberInfo": {
-        "dataPoints": [{"deviceGroupFullPath": "*", "deviceDisplayName": "*", "dataSourceFullName": "Etcd Member Performance (Etcd_Member_Performance)", "instanceName": "*", "dataPointName": "db_total_size", "name": "db_total_size", "aggregateFunction": "sum"}],
-        "virtualDataPoints": [], "counters": [],
-        "bigNumberItems": [{"dataPointName": "db_total_size", "bottomLabel": "", "rightLabel": "Etcd DB Size (bytes)", "position": 1, "rounding": 0, "colorThresholds": null, "useCommaSeparators": true, "actions": []}]
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "Etcd Member Performance (Etcd_Member_Performance)",
+            "instanceName": "*",
+            "dataPointName": "db_total_size",
+            "name": "db_total_size",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "db_total_size",
+            "bottomLabel": "",
+            "rightLabel": "Etcd DB Size (bytes)",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": true,
+            "actions": []
+          }
+        ]
       }
     },
     {
+      "id": 6674,
       "name": "Min Certificate Expiry",
       "description": "Shortest time-to-expiry across all watched certificates (seconds)",
-      "type": "bigNumber", "theme": "borderPurple", "interval": 5, "timescale": "day",
+      "type": "bigNumber",
+      "theme": "newBorderDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
       "bigNumberInfo": {
-        "dataPoints": [{"deviceGroupFullPath": "*", "deviceDisplayName": "*", "dataSourceFullName": "OCP Certificate Health (OCP_Certificate_Health)", "instanceName": "*", "dataPointName": "min_cert_expiry_seconds", "name": "min_cert_expiry_seconds", "aggregateFunction": "average"}],
-        "virtualDataPoints": [], "counters": [],
-        "bigNumberItems": [{"dataPointName": "min_cert_expiry_seconds", "bottomLabel": "", "rightLabel": "Min Cert Expiry (seconds)", "position": 1, "rounding": 0, "colorThresholds": null, "useCommaSeparators": true, "actions": []}]
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "OCP Certificate Health (OCP_Certificate_Health)",
+            "instanceName": "*",
+            "dataPointName": "min_cert_expiry_seconds",
+            "name": "min_cert_expiry_seconds",
+            "aggregateFunction": "average"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "min_cert_expiry_seconds",
+            "bottomLabel": "",
+            "rightLabel": "Min Cert Expiry (seconds)",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": true,
+            "actions": []
+          }
+        ]
       }
     },
     {
+      "id": 6675,
       "name": "TLS Handshake Errors",
       "description": "TLS handshake error rate summed across clusters",
-      "type": "bigNumber", "theme": "borderPurple", "interval": 5, "timescale": "day",
+      "type": "bigNumber",
+      "theme": "newBorderDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
       "bigNumberInfo": {
-        "dataPoints": [{"deviceGroupFullPath": "*", "deviceDisplayName": "*", "dataSourceFullName": "OCP Certificate Health (OCP_Certificate_Health)", "instanceName": "*", "dataPointName": "tls_handshake_errors", "name": "tls_handshake_errors", "aggregateFunction": "sum"}],
-        "virtualDataPoints": [], "counters": [],
-        "bigNumberItems": [{"dataPointName": "tls_handshake_errors", "bottomLabel": "", "rightLabel": "TLS Handshake Errors", "position": 1, "rounding": 2, "colorThresholds": null, "useCommaSeparators": false, "actions": []}]
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "OCP Certificate Health (OCP_Certificate_Health)",
+            "instanceName": "*",
+            "dataPointName": "tls_handshake_errors",
+            "name": "tls_handshake_errors",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "tls_handshake_errors",
+            "bottomLabel": "",
+            "rightLabel": "TLS Handshake Errors",
+            "position": 1,
+            "rounding": 2,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
       }
     },
     {
+      "id": 6676,
       "name": "Prometheus Targets Down",
       "description": "Prometheus scrape targets reporting Down across clusters",
-      "type": "bigNumber", "theme": "borderPurple", "interval": 5, "timescale": "day",
+      "type": "bigNumber",
+      "theme": "newBorderDarkBlue",
+      "interval": 5,
+      "timescale": "day",
+      "displaySettings": {},
       "bigNumberInfo": {
-        "dataPoints": [{"deviceGroupFullPath": "*", "deviceDisplayName": "*", "dataSourceFullName": "OCP Monitoring Health (OCP_Monitoring_Health)", "instanceName": "*", "dataPointName": "targets_down", "name": "targets_down", "aggregateFunction": "sum"}],
-        "virtualDataPoints": [], "counters": [],
-        "bigNumberItems": [{"dataPointName": "targets_down", "bottomLabel": "", "rightLabel": "Prometheus Targets Down", "position": 1, "rounding": 0, "colorThresholds": null, "useCommaSeparators": false, "actions": []}]
+        "dataPoints": [
+          {
+            "deviceGroupFullPath": "*",
+            "deviceDisplayName": "*",
+            "dataSourceFullName": "OCP Monitoring Health (OCP_Monitoring_Health)",
+            "instanceName": "*",
+            "dataPointName": "targets_down",
+            "name": "targets_down",
+            "aggregateFunction": "sum"
+          }
+        ],
+        "virtualDataPoints": [],
+        "counters": [],
+        "bigNumberItems": [
+          {
+            "dataPointName": "targets_down",
+            "bottomLabel": "",
+            "rightLabel": "Prometheus Targets Down",
+            "position": 1,
+            "rounding": 0,
+            "colorThresholds": null,
+            "useCommaSeparators": false,
+            "actions": []
+          }
+        ]
       }
     },
     {
+      "id": 6677,
       "name": "Active Platform Alerts (OCP + Etcd)",
       "description": "Live alerts scoped to OCP_* and Etcd_* DataSources",
-      "type": "alert", "theme": "borderPurple", "interval": 5, "timescale": "day",
+      "type": "alert",
+      "theme": "newBorderDarkBlue",
+      "interval": 5,
+      "timescale": "day",
       "displaySettings": {
-        "isShowAll": false, "showFilter": true,
+        "isShowAll": false,
+        "showFilter": true,
         "columns": [
-          {"visible": true, "columnLabel": "Severity", "columnKey": "alert-severity"},
-          {"visible": true, "columnLabel": "Began", "columnKey": "alert-began"},
-          {"visible": true, "columnLabel": "Resource/Website", "columnKey": "alert-device"},
-          {"visible": true, "columnLabel": "LogicModule", "columnKey": "alert-datasource"},
-          {"visible": true, "columnLabel": "Instance", "columnKey": "alert-datasource-instance"},
-          {"visible": true, "columnLabel": "Datapoint", "columnKey": "alert-datapoint"},
-          {"visible": true, "columnLabel": "Value", "columnKey": "alert-value"},
-          {"visible": true, "columnLabel": "Static Threshold", "columnKey": "alert-static-threshold"}
+          {
+            "visible": true,
+            "columnLabel": "Severity",
+            "columnKey": "alert-severity"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Began",
+            "columnKey": "alert-began"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Resource/Website",
+            "columnKey": "alert-device"
+          },
+          {
+            "visible": true,
+            "columnLabel": "LogicModule",
+            "columnKey": "alert-datasource"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Instance",
+            "columnKey": "alert-datasource-instance"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Datapoint",
+            "columnKey": "alert-datapoint"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Value",
+            "columnKey": "alert-value"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Static Threshold",
+            "columnKey": "alert-static-threshold"
+          }
         ],
-        "fontsize": "normal-font", "sort": "-startEpoch"
+        "fontsize": "normal-font",
+        "sort": "-startEpoch"
       },
       "filters": {
-        "group": "*", "host": "", "dataSource": "OCP_*,Etcd_*", "instance": "", "dataPoint": "",
-        "severity": "", "acked": "all", "sdted": "all", "rule": "", "chain": "", "cleared": "no",
-        "keyword": "", "dependencyRole": "", "dependencyRoutingState": "", "anomaly": "all"
+        "group": "*",
+        "host": "",
+        "dataSource": "OCP_*,Etcd_*",
+        "instance": "",
+        "dataPoint": "",
+        "severity": "",
+        "acked": "all",
+        "sdted": "all",
+        "rule": "",
+        "chain": "",
+        "cleared": "no",
+        "keyword": "",
+        "dependencyRole": "",
+        "dependencyRoutingState": "",
+        "anomaly": "all"
       }
     }
   ]

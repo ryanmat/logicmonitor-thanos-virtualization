@@ -9,25 +9,96 @@
   "defaultDashboardFilters": {
     "defaultDashboardFilterDetails": []
   },
-  "widgetsConfig": {},
+  "widgetsConfig": {
+    "6646": {
+      "col": 1,
+      "sizex": 4,
+      "row": 1,
+      "sizey": 8
+    },
+    "6656": {
+      "col": 5,
+      "sizex": 8,
+      "row": 1,
+      "sizey": 8
+    },
+    "6647": {
+      "col": 5,
+      "sizex": 4,
+      "row": 9,
+      "sizey": 4
+    },
+    "6648": {
+      "col": 9,
+      "sizex": 4,
+      "row": 9,
+      "sizey": 4
+    },
+    "6649": {
+      "col": 1,
+      "sizex": 4,
+      "row": 9,
+      "sizey": 4
+    },
+    "6650": {
+      "col": 5,
+      "sizex": 4,
+      "row": 13,
+      "sizey": 4
+    },
+    "6651": {
+      "col": 9,
+      "sizex": 4,
+      "row": 13,
+      "sizey": 4
+    },
+    "6652": {
+      "col": 1,
+      "sizex": 4,
+      "row": 13,
+      "sizey": 4
+    },
+    "6653": {
+      "col": 5,
+      "sizex": 4,
+      "row": 17,
+      "sizey": 4
+    },
+    "6654": {
+      "col": 9,
+      "sizex": 4,
+      "row": 17,
+      "sizey": 4
+    },
+    "6655": {
+      "col": 1,
+      "sizex": 4,
+      "row": 17,
+      "sizey": 4
+    }
+  },
   "template": null,
   "widgets_full": [
     {
+      "id": 6646,
       "name": "OpenShift Thanos Overview",
       "description": "Executive summary header",
       "type": "text",
-      "theme": "newSolidDarkBlue",
+      "theme": "solidPurple",
       "interval": 5,
       "timescale": "day",
+      "displaySettings": {},
       "content": "<h2>OpenShift Thanos Monitoring Suite</h2><p>Executive health snapshot across all deployed OpenShift monitoring suites. Each tile shows the current cluster-level health signal from the corresponding Thanos-backed DataSource. Tiles turn red when attention is needed.</p><p><strong>Suites covered:</strong> OCP (OperatorHub) &middot; Etcd &middot; KubeVirt &middot; OpenShift Data Foundation &middot; Advanced Cluster Management &middot; GitOps (ArgoCD) &middot; Portworx</p><p><strong>Source:</strong> PromQL queries against each cluster's Thanos Querier. Devices auto-bind to widgets via <code>system.categories</code> set by the <code>addCategory_OpenShift_Thanos</code> PropertySource.</p>"
     },
     {
+      "id": 6647,
       "name": "OCP Operators Degraded",
       "description": "Count of degraded ClusterOperators across all OCP clusters (0 = healthy)",
       "type": "bigNumber",
-      "theme": "borderPurple",
+      "theme": "newSolidDarkBlue",
       "interval": 5,
       "timescale": "day",
+      "displaySettings": {},
       "bigNumberInfo": {
         "dataPoints": [
           {
@@ -57,12 +128,14 @@
       }
     },
     {
+      "id": 6648,
       "name": "Etcd Leaders Active",
       "description": "Active etcd leaders across clusters (must equal number of clusters)",
       "type": "bigNumber",
-      "theme": "borderPurple",
+      "theme": "newSolidDarkBlue",
       "interval": 5,
       "timescale": "day",
+      "displaySettings": {},
       "bigNumberInfo": {
         "dataPoints": [
           {
@@ -92,12 +165,14 @@
       }
     },
     {
+      "id": 6649,
       "name": "KubeVirt System Health",
       "description": "HyperConverged Operator health state aggregated across clusters (0 = healthy)",
       "type": "bigNumber",
-      "theme": "borderPurple",
+      "theme": "newSolidDarkBlue",
       "interval": 5,
       "timescale": "day",
+      "displaySettings": {},
       "bigNumberInfo": {
         "dataPoints": [
           {
@@ -127,12 +202,14 @@
       }
     },
     {
+      "id": 6650,
       "name": "ODF Ceph Health",
       "description": "Ceph cluster health enum across ODF clusters (0=OK, 1=WARN, 2=ERR)",
       "type": "bigNumber",
-      "theme": "borderPurple",
+      "theme": "newSolidDarkBlue",
       "interval": 5,
       "timescale": "day",
+      "displaySettings": {},
       "bigNumberInfo": {
         "dataPoints": [
           {
@@ -162,12 +239,14 @@
       }
     },
     {
+      "id": 6651,
       "name": "ACM Clusters Unavailable",
       "description": "Managed clusters where Available condition is not true",
       "type": "bigNumber",
-      "theme": "borderPurple",
+      "theme": "newSolidDarkBlue",
       "interval": 5,
       "timescale": "day",
+      "displaySettings": {},
       "bigNumberInfo": {
         "dataPoints": [
           {
@@ -197,12 +276,14 @@
       }
     },
     {
+      "id": 6652,
       "name": "GitOps Apps Out of Sync",
       "description": "ArgoCD applications with OutOfSync status across the fleet",
       "type": "bigNumber",
-      "theme": "borderPurple",
+      "theme": "newSolidDarkBlue",
       "interval": 5,
       "timescale": "day",
+      "displaySettings": {},
       "bigNumberInfo": {
         "dataPoints": [
           {
@@ -232,12 +313,14 @@
       }
     },
     {
+      "id": 6653,
       "name": "Portworx Quorum Status",
       "description": "Portworx cluster quorum health (1 per healthy cluster, 0 when quorum lost)",
       "type": "bigNumber",
-      "theme": "borderPurple",
+      "theme": "newSolidDarkBlue",
       "interval": 5,
       "timescale": "day",
+      "displaySettings": {},
       "bigNumberInfo": {
         "dataPoints": [
           {
@@ -267,12 +350,14 @@
       }
     },
     {
+      "id": 6654,
       "name": "ODF Ceph Capacity Used",
       "description": "Ceph cluster fill level (% used of total raw capacity)",
       "type": "gauge",
-      "theme": "borderPurple",
+      "theme": "newSolidDarkBlue",
       "interval": 5,
-      "timescale": "day",
+      "timescale": "1day",
+      "displaySettings": {},
       "showPeak": false,
       "peakTimeRange": "30days",
       "legend": "used_percent",
@@ -293,12 +378,14 @@
       "displayUnit": ""
     },
     {
+      "id": 6655,
       "name": "Portworx Capacity Used",
       "description": "Portworx cluster fill level (% used of total storage)",
       "type": "gauge",
-      "theme": "borderPurple",
+      "theme": "newSolidDarkBlue",
       "interval": 5,
-      "timescale": "day",
+      "timescale": "1day",
+      "displaySettings": {},
       "showPeak": false,
       "peakTimeRange": "30days",
       "legend": "used_percent",
@@ -319,24 +406,57 @@
       "displayUnit": ""
     },
     {
+      "id": 6656,
       "name": "Active Alerts - OpenShift Thanos Suites",
       "description": "Live alerts from all OpenShift Thanos suite DataSources. On import, scope 'Resource Group' filter to your OpenShift device group for tenant isolation.",
       "type": "alert",
-      "theme": "borderPurple",
+      "theme": "newSolidDarkBlue",
       "interval": 5,
       "timescale": "day",
       "displaySettings": {
         "isShowAll": false,
         "showFilter": true,
         "columns": [
-          {"visible": true, "columnLabel": "Severity", "columnKey": "alert-severity"},
-          {"visible": true, "columnLabel": "Began", "columnKey": "alert-began"},
-          {"visible": true, "columnLabel": "Resource/Website", "columnKey": "alert-device"},
-          {"visible": true, "columnLabel": "LogicModule", "columnKey": "alert-datasource"},
-          {"visible": true, "columnLabel": "Instance", "columnKey": "alert-datasource-instance"},
-          {"visible": true, "columnLabel": "Datapoint", "columnKey": "alert-datapoint"},
-          {"visible": true, "columnLabel": "Value", "columnKey": "alert-value"},
-          {"visible": true, "columnLabel": "Static Threshold", "columnKey": "alert-static-threshold"}
+          {
+            "visible": true,
+            "columnLabel": "Severity",
+            "columnKey": "alert-severity"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Began",
+            "columnKey": "alert-began"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Resource/Website",
+            "columnKey": "alert-device"
+          },
+          {
+            "visible": true,
+            "columnLabel": "LogicModule",
+            "columnKey": "alert-datasource"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Instance",
+            "columnKey": "alert-datasource-instance"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Datapoint",
+            "columnKey": "alert-datapoint"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Value",
+            "columnKey": "alert-value"
+          },
+          {
+            "visible": true,
+            "columnLabel": "Static Threshold",
+            "columnKey": "alert-static-threshold"
+          }
         ],
         "fontsize": "normal-font",
         "sort": "-startEpoch"
